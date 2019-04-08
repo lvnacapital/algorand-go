@@ -21,9 +21,9 @@ func ReadLine() string {
 
 // ClearScreen clears the terminal window and scrollback buffer.
 func ClearScreen() {
-	// Standard clear command
+	// Standard clear command.
 	fmt.Printf("\033[H\033[2J")
 
-	// Clear scrollback buffer, if supported
+	// Clear scrollback buffer, if supported.
 	fmt.Printf("\033[3J")
 }

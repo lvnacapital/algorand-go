@@ -11,21 +11,23 @@ import (
 )
 
 var (
-	config      string // config file location
-	showVersion bool   // whether to print version info or not
+	// Root variables
+	config      string
+	showVersion bool
 
-	// body     io.ReadWriter        // what to read/write requests body
-	// verbose  bool                 // whether to display request info
-	// insecure bool          = true // whether to ignore cert or not
+	// Subcommand variables
+	walletName     string
+	walletPassword string
+	blockNumber    uint64
+	fromAddr       string
+	toAddr         string
+	note           string
+	fee            uint64
+	amount         uint64
+	firstRound     uint64
+	lastRound      uint64
 
-	// key  string // blob key
-	// data string // blob raw data (or '-' for stdin)
-	// file string // blob file location
-
-	// config   string // config file location
-	// showVers bool   // whether to print version info or not
-
-	// Variables to set by the linker
+	// Linker variables
 	version string
 	commit  string
 
@@ -43,9 +45,9 @@ var (
 	}
 )
 
-func readConfig() { //(ccmd *cobra.Command, args []string) error {
+func readConfig() {
 	if config != "" {
-		// Use config file from the flag.
+		// Use config file passed in the flag.
 		viper.SetConfigFile(config)
 	} else {
 		// Find home directory.
@@ -85,7 +87,7 @@ func preFlight(ccmd *cobra.Command, args []string) error {
 	}
 
 	ccmd.HelpFunc()(ccmd, args)
-	return fmt.Errorf("") // no error, just exit
+	return fmt.Errorf("")
 }
 
 func startAlgorand(ccmd *cobra.Command, args []string) error {
@@ -93,6 +95,7 @@ func startAlgorand(ccmd *cobra.Command, args []string) error {
 }
 
 func init() {
+	// Read configuration
 	cobra.OnInitialize(readConfig)
 
 	// Local flags
@@ -102,10 +105,10 @@ func init() {
 	AlgorandCmd.PersistentFlags().StringVarP(&config, "config", "c", "", "Path to configuration file")
 	AlgorandCmd.PersistentFlags().String("log-level", "INFO", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 	AlgorandCmd.PersistentFlags().StringP("host", "H", "127.0.0.1", "Algorand node hostname/IP")
-	AlgorandCmd.PersistentFlags().StringP("algod-port", "a", "8080", "Port used by `algod'")
-	AlgorandCmd.PersistentFlags().StringP("algod-token", "t", "", "Authorization token for `algod'")
-	AlgorandCmd.PersistentFlags().StringP("kmd-port", "k", "7833", "Port used by `kmd'")
-	AlgorandCmd.PersistentFlags().StringP("kmd-token", "n", "", "Authorization token for `kmd'")
+	AlgorandCmd.PersistentFlags().String("algod-port", "8080", "Port used by `algod'")
+	AlgorandCmd.PersistentFlags().String("algod-token", "", "Authorization token for `algod'")
+	AlgorandCmd.PersistentFlags().String("kmd-port", "7833", "Port used by `kmd'")
+	AlgorandCmd.PersistentFlags().String("kmd-token", "", "Authorization token for `kmd'")
 	viper.BindPFlag("log-level", AlgorandCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("host", AlgorandCmd.PersistentFlags().Lookup("host"))
 	viper.BindPFlag("algod-port", AlgorandCmd.PersistentFlags().Lookup("algod-port"))
@@ -115,6 +118,11 @@ func init() {
 
 	// Commands
 	AlgorandCmd.AddCommand(statusCmd)
+	AlgorandCmd.AddCommand(blockCmd)
+	AlgorandCmd.AddCommand(createCmd)
+	AlgorandCmd.AddCommand(backupCmd)
+	AlgorandCmd.AddCommand(restoreCmd)
+	AlgorandCmd.AddCommand(signCmd)
 
 	// Hidden or aliased commands
 	AlgorandCmd.AddCommand(healthCmd)
