@@ -3,13 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 
-	"github.com/algorand/go-algorand-sdk/client/algod"
-	"github.com/algorand/go-algorand-sdk/client/kmd"
-	"github.com/lvnacapital/algorand/cli"
+	"github.com/lvnacapital/algorand/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -32,30 +28,7 @@ func includeBlockFlags(ccmd *cobra.Command) {
 }
 
 func block(ccmd *cobra.Command, args []string) error {
-	algodAddress := fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("algod-port"))
-	kmdAddress := fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port"))
-	algodToken := viper.GetString("algod-token")
-	kmdToken := viper.GetString("kmd-token")
-
-	if runtime.GOOS != "windows" {
-		cli.ClearScreen()
-	}
-
-	// Create an algod client
-	algodClient, err := algod.MakeClient(algodAddress, algodToken)
-	if err != nil {
-		return fmt.Errorf("Failed to make algod client: %s", err)
-	}
-	fmt.Println("Made an algod client.")
-
-	// Create a kmd client
-	kmdClient, err := kmd.MakeClient(kmdAddress, kmdToken)
-	if err != nil {
-		return fmt.Errorf("Failed to make kmd client: %s", err)
-	}
-	fmt.Println("Made a kmd client.")
-
-	fmt.Printf("algod: %T, kmd: %T\n", algodClient, kmdClient)
+	util.ClearScreen()
 
 	// Get algod status
 	nodeStatus, err := algodClient.Status()
