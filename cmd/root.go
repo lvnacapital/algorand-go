@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jcelliott/lumber"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/lvnacapital/algorand/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/algorand/go-algorand-sdk/client/algod"
+	"github.com/algorand/go-algorand-sdk/client/kmd"
 )
 
 var (
@@ -15,13 +17,20 @@ var (
 	config      string
 	showVersion bool
 
+	algodAddress string
+	kmdAddress   string
+	algodToken   string
+	kmdToken     string
+	algodClient  algod.Client
+	kmdClient    kmd.Client
+
 	// Subcommand variables
 	walletName     string
 	walletPassword string
 	blockNumber    uint64
 	fromAddr       string
 	toAddr         string
-	note           string
+	noteText       string
 	fee            uint64
 	amount         uint64
 	firstRound     uint64
@@ -39,8 +48,8 @@ var (
 		SilenceErrors: true,
 		SilenceUsage:  true,
 
-		PersistentPreRunE: prePreFlight,
-		PreRunE:           preFlight,
+		PersistentPreRunE: allPreFlight,
+		PreRunE:           rootPreFlight,
 		RunE:              startAlgorand,
 	}
 )
@@ -50,37 +59,52 @@ func readConfig() {
 		// Use config file passed in the flag.
 		viper.SetConfigFile(config)
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
+		// // Find home directory.
+		// homedir "github.com/mitchellh/go-homedir"
+		// dir, err := homedir.Dir()
+		// if err != nil {
+		// 	fmt.Println(err)
+		// 	os.Exit(1)
+		// }
+		dir, err := os.Getwd()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name "config.yml".
-		viper.AddConfigPath(home)
+		// Search config in "home" or "pwd" directory with name "config.yml".
+		viper.AddConfigPath(dir)
 		viper.SetConfigName("config")
 		viper.SetConfigType("yml")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Can't read config:", err)
+		fmt.Println("Cannot read config:", err)
 		os.Exit(1)
 	}
 }
 
-func prePreFlight(ccmd *cobra.Command, args []string) error {
-	// Convert the log level.
-	logLvl := lumber.LvlInt(viper.GetString("log-level"))
+func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
+	// // Convert the log level.
+	// logLvl := lumber.LvlInt(viper.GetString("log-level"))
 
-	// Configure the logger.
-	lumber.Prefix("[algorand]")
-	lumber.Level(logLvl)
+	// // Configure the logger.
+	// lumber.Prefix("[algorand]")
+	// lumber.Level(logLvl)
 
-	return nil
+	algodAddress = fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("algod-port"))
+	kmdAddress = fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port"))
+	algodToken = viper.GetString("algod-token")
+	kmdToken = viper.GetString("kmd-token")
+
+	algodClient, kmdClient, err = util.MakeClients(algodAddress, kmdAddress, algodToken, kmdToken)
+	if err != nil {
+		fmt.Printf("Failed to make clients: %s", err)
+	}
+	return err
 }
 
-func preFlight(ccmd *cobra.Command, args []string) error {
+func rootPreFlight(ccmd *cobra.Command, args []string) error {
 	if showVersion {
 		fmt.Printf("algorand %s (%s)\n", version, commit)
 		os.Exit(0)
