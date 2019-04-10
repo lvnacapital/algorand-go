@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/algorand/go-algorand-sdk/client/algod/models"
+	"github.com/algorand/go-algorand-sdk/encoding/msgpack"
 	"github.com/lvnacapital/algorand/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -11,32 +14,109 @@ import (
 
 var (
 	getCmd = &cobra.Command{
-		Use:   "status",
+		Use:   "get",
 		Short: "Gets a transaction from the blockchain",
 		Long:  ``,
+		RunE:  getAddr,
+	}
 
-		RunE: get,
+	getAllCmd = &cobra.Command{
+		Use:   "get-all",
+		Short: "Gets all transaction for an address on the blockchain",
+		Long:  ``,
+		RunE:  getAllAddr,
 	}
 
 	findCmd = &cobra.Command{
-		Use:   "status",
+		Use:   "find",
 		Short: "Finds a transaction on the blockchain",
 		Long:  ``,
-
-		RunE: find,
+		RunE:  find,
 	}
 )
 
 func init() {
-	includeSearchFlags(findCmd)
 	includeSearchFlags(getCmd)
+	includeSearchFlags(getAllCmd)
+	includeSearchFlags(findCmd)
 }
 
 func includeSearchFlags(ccmd *cobra.Command) {
 	ccmd.Flags().StringVarP(&txID, "transaction", "t", "", "Specify the transaction to find")
-	ccmd.Flags().StringVarP(&fromAddr, "address", "f", "", "Account address to send the money from (required)")
-	ccmd.Flags().Uint64Var(&firstRound, "firstvalid", 0, "The first round where the transaction may be committed to the ledger (currently ignored)")
-	ccmd.Flags().Uint64Var(&lastRound, "lastvalid", 0, "The last round where the transaction may be committed to the ledger (currently ignored)")
+	ccmd.Flags().StringVarP(&addr, "address", "a", "", "Account address to use")
+	ccmd.Flags().Uint64Var(&firstRound, "firstvalid", 0, "The first round where the transaction may be found")
+	ccmd.Flags().Uint64Var(&lastRound, "lastvalid", 0, "The last round where the transaction may be found")
+}
+
+func getParams() (txParams models.TransactionParams, err error) {
+	// Get the suggested transaction parameters
+	txParams, err = algodClient.SuggestedParams()
+	if err != nil {
+		err = fmt.Errorf("Error getting suggested Tx params: %s", err)
+	}
+
+	return txParams, err
+}
+
+// e.g. 2VXBXLOZSLA5EXPYD3P2SS5ODNUDTMOWTIQPLEU2SZB2Z563IWIXMQKJKI
+func resolveAddress() error {
+	if addr == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
+		for {
+			fmt.Print("\nEnter the address: ")
+			a, err := term.ReadLine()
+			if err != nil {
+				return fmt.Errorf("Error getting address: %s", err)
+			}
+			addr = string(a)
+			if util.IsValidAddress(addr) {
+				break
+			}
+			fmt.Print("Malformed address. Please try again.\n")
+		}
+	} else {
+		if !util.IsValidAddress(addr) {
+			return fmt.Errorf("Malformed address: %s", addr)
+		}
+	}
+
+	return nil
+}
+
+// e.g. A6R7R6EL2I4QJRHBSRLE2B4AQ3N74MKRWQZARYCXQOR742HC3NGQ
+func resolveTxID() error {
+	if txID == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
+		fmt.Print("\nEnter the transaction ID: tx-")
+		txid, err := term.ReadLine()
+		if err != nil {
+			return fmt.Errorf("Error getting transaction ID: %s", err)
+		}
+		txID = string(txid)
+	}
+
+	return nil
+}
+
+// Reading the Note Field of a Transaction
+// Up to 1kb of arbitrary data can be stored in any
+// transaction. This data can be stored and read from the
+// transaction's note field. If this data was encoded using the
+// SDK's `Encode' function, then it can be decoded using the
+// `Decode' function.
+func readNote(note []byte) {
+	// fmt.Printf("Note size: %d\n", len(transaction.Note))
+	var m map[interface{}]string // interface {}
+	err := msgpack.Decode(note, &m)
+	if err != nil {
+		fmt.Printf("Cannot decode note - %s\n", err)
+	}
+	fmt.Printf("Decoded type: %T\n", m)
+	fmt.Printf("Decoded byte: %v\n", m)
+	fmt.Print("Decoded text:\n")
+	for k, v := range m {
+		fmt.Printf("\t%v: %v\n", k, v)
+	}
 }
 
 // Locating a Transaction
@@ -49,75 +129,47 @@ func includeSearchFlags(ccmd *cobra.Command) {
 //  - Use the account's address with the transaction ID and call the
 //    `algod' client's transactionInformation function to find a
 //    specific transaction.
-func get(ccmd *cobra.Command, args []string) error {
+func getAddr(ccmd *cobra.Command, args []string) error {
 	util.ClearScreen()
 	fmt.Println("\nFind Transaction Using Address and Transaction ID")
-	fmt.Println("-------------------------------------------------")
+	fmt.Print("-------------------------------------------------")
 
-	term := terminal.NewTerminal(os.Stdin, "")
-	if fromAddr == "" {
-		for {
-			fmt.Print("\nEnter the sender address to look for: ")
-			from, err := term.ReadLine()
-			if err != nil {
-				return fmt.Errorf("Error getting sender address: %s", err)
-			}
-			fromAddr = string(from)
-			if util.IsValidAddress(fromAddr) {
-				break
-			}
-			fmt.Print("Malformed address. Please try again.\n")
-		}
-	} else {
-		if !util.IsValidAddress(fromAddr) {
-			return fmt.Errorf("Malformed address: %s", fromAddr)
-		}
-	}
-
-	if txID == "" {
-		for {
-			fmt.Print("\nEnter the transaction ID to look for: tx-")
-			from, err := term.ReadLine()
-			if err != nil {
-				return fmt.Errorf("Error getting transaction ID: %s", err)
-			}
-			fromAddr = string(from)
-			if util.IsValidAddress(fromAddr) {
-				break
-			}
-			fmt.Print("Malformed address. Please try again.\n")
-		}
-	} else {
-		if !util.IsValidAddress(fromAddr) {
-			return fmt.Errorf("Malformed address: %s", fromAddr)
-		}
-	}
+	resolveAddress()
+	resolveTxID()
 
 	tx, err := algodClient.TransactionInformation(fromAddr, txID)
 	if err != nil {
-		return fmt.Errorf("Transaction not found: %s", err)
+		return fmt.Errorf("Transaction not found - %s", err)
 	}
 	fmt.Printf("Transaction: %+v", tx)
 
-	// Reading the Note Field of a Transaction
-	// Up to 1kb of arbitrary data can be stored in any
-	// transaction. This data can be stored and read from the
-	// transaction's note field. If this data was encoded using the
-	// SDK's `encodeObj' function, then it can be decoded using the
-	// `decodeObj' function.
-	// const encodednote = JSON.stringify(algosdk.decodeObj(tx.note), undefined, 4);
-	// fmt.Print(`Decoded: ${encodednote}`);
+	return nil
+}
 
-	// // Iterate across all transactions for a given address and
-	// // round range.
-	// const params = await algodClient.getTransactionParams();
-	// const begin = 343496;
-	// const end = params.lastRound;
-	// const txts = await algodClient.transactionByAddress(addr, begin, end);
-	// if (typeof txts !== 'undefined') {
-	//     const lastTransaction = txts.transactions[txts.transactions.length - 1];
-	//     fmt.Print(`Transaction: ${JSON.stringify(lastTransaction)}`);
-	// }
+// Iterate across all transactions for a given address and round range
+func getAllAddr(ccmd *cobra.Command, args []string) error {
+	util.ClearScreen()
+	fmt.Println("\nList Transaction Using Address")
+	fmt.Print("------------------------------")
+
+	resolveAddress()
+
+	txParams, err := getParams()
+	if err != nil {
+		return err
+	}
+	begin := uint64(343496)
+	end := txParams.LastRound
+	fmt.Printf("%s %d %d", fromAddr, begin, end)
+	txts, err := algodClient.TransactionsByAddr(fromAddr, begin, end)
+	if err != nil {
+		return fmt.Errorf("Error finding transactions in this range - %s", err)
+	}
+
+	if len(txts.Transactions) > 0 {
+		latestTransaction := txts.Transactions[len(txts.Transactions)-1]
+		fmt.Printf("Latest transaction: %+v", latestTransaction)
+	}
 
 	return nil
 }
@@ -125,42 +177,43 @@ func get(ccmd *cobra.Command, args []string) error {
 func find(ccmd *cobra.Command, args []string) error {
 	util.ClearScreen()
 	fmt.Println("\nFind Transaction Using Transaction ID")
-	fmt.Println("-------------------------------------")
-	// if (!txId) {
-	//     txId = readlineSync.question('\nEnter the transaction ID to look for: tx-');
-	// }
+	fmt.Print("-------------------------------------")
 
-	// (async () => {
-	//     const params = await algodClient.getTransactionParams();
-	//     const start = params.lastRound;
-	//     const end = 0;
-	//     mainloop: for (let i = start; i > end; i--) {
-	//         const block = await algodClient.block(i);
-	//         // fmt.Print("Number of Transactions in " + i + ": " + block.txns.transactions.length);
-	//         if (typeof block.txns.transactions === 'undefined') {
-	//             continue;
-	//         }
-	//         const txcn = block.txns.transactions.length;
+	resolveTxID()
 
-	//         for (let j = 0; j < txcn - 1; j++) {
-	//             // fmt.Print("Transaction " + block.txns.transactions[j].tx);
-	//             if (block.txns.transactions[j].tx === txId) {
-	//                 const textedJson = JSON.stringify(block.txns.transactions[j], undefined, 4);
-	//                 fmt.Print(`Transaction: ${textedJson}`);
-	//                 if (
-	//                     undefined !== block.txns.transactions[j].note
-	//                     && block.txns.transactions[j].note.length
-	//                 ) {
-	//                     const encodednote = JSON.stringify(
-	//                         algosdk.decodeObj(block.txns.transactions[j].note),
-	//                         undefined,
-	//                         4,
-	//                     );
-	//                     fmt.Print(`Decoded: ${encodednote}`);
-	//                 }
-	//                 break mainloop;
-	//             }
-	//         }
-	//     }
+	txParams, err := getParams()
+	if err != nil {
+		return err
+	}
+	start := txParams.LastRound
+	end := uint64(0)
+
+mainLoop:
+	for i := start; i > end; i-- {
+		block, err := algodClient.Block(i)
+		if err != nil {
+			return fmt.Errorf("Retrieving block %d - %s", i, err)
+		}
+		// fmt.Printf("Number of transactions in block %d: %d", i, len(block.Txns.Transactions))
+		if !(len(block.Txns.Transactions) > 0) {
+			continue
+		}
+
+		for _, transaction := range block.Txns.Transactions {
+			if transaction.TxID == txID {
+				fmt.Printf("Found transaction in block: %d\n", i)
+				transactionJSON, err := json.MarshalIndent(transaction, "", "  ")
+				if err != nil {
+					fmt.Printf("Cannot marshall block data - %s\n", err)
+				}
+				fmt.Printf("Transaction: %s\n", transactionJSON)
+				if len(transaction.Note) > 0 {
+					readNote(transaction.Note)
+				}
+				break mainLoop
+			}
+		}
+	}
+
 	return nil
 }

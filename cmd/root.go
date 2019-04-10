@@ -35,6 +35,7 @@ var (
 	amount         uint64
 	firstRound     uint64
 	lastRound      uint64
+	addr           string
 	txID           string
 
 	// Linker variables
@@ -148,6 +149,7 @@ func init() {
 	AlgorandCmd.AddCommand(backupCmd)
 	AlgorandCmd.AddCommand(restoreCmd)
 	AlgorandCmd.AddCommand(getCmd)
+	AlgorandCmd.AddCommand(getAllCmd)
 	AlgorandCmd.AddCommand(findCmd)
 	AlgorandCmd.AddCommand(signCmd)
 

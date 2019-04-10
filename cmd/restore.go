@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	// Restore command
 	restoreCmd = &cobra.Command{
 		Use:   "restore",
 		Short: "Backs up a wallet, and generates an account within that wallet",
