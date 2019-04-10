@@ -1,20 +1,90 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/base32"
 	"fmt"
+	"os"
+	"reflect"
+	"runtime"
+	"strings"
+
+	"github.com/algorand/go-algorand-sdk/client/algod"
+	"github.com/algorand/go-algorand-sdk/client/kmd"
+	"github.com/algorand/go-algorand-sdk/types"
 )
 
 const investorCodeLen = 16
 const investorCodeLenDecoded = 10
 const registrationBaseURL = "https://investorkey.algodev.network/register"
+const algorandAddressLength = 58
 
 var numKeys int
 var genInvestorCode bool
 var createWallet bool
+
+// IsValidAddress ...
+func IsValidAddress(address string) bool {
+	if reflect.TypeOf(address).String() != "string" {
+		return false
+	}
+
+	if len(address) != algorandAddressLength {
+		return false
+	}
+
+	_, err := types.DecodeAddress(address)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// MakeClients ...
+func MakeClients(algodAddress string, kmdAddress string, algodToken string, kmdToken string) (algodClient algod.Client, kmdClient kmd.Client, err error) {
+	// Create an algod client
+	algodClient, err = algod.MakeClient(algodAddress, algodToken)
+	if err != nil {
+		return
+	}
+	fmt.Println("Made an algod client.")
+
+	// Create a kmd client
+	kmdClient, err = kmd.MakeClient(kmdAddress, kmdToken)
+	if err != nil {
+		return
+	}
+	fmt.Println("Made a kmd client.")
+
+	return
+}
+
+// ReadLine takes in user input.
+func ReadLine() string {
+	reader := bufio.NewReader(os.Stdin)
+	resp, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot read stdin.")
+		os.Exit(1)
+	}
+	fmt.Printf("\n")
+	return strings.TrimSpace(resp)
+}
+
+// ClearScreen clears the terminal window and scrollback buffer.
+func ClearScreen() {
+	if runtime.GOOS != "windows" {
+		// Standard clear command.
+		fmt.Printf("\033[H\033[2J")
+
+		// Clear scrollback buffer, if supported.
+		fmt.Printf("\033[3J")
+	}
+}
 
 func base32Encode(b []byte) string {
 	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)

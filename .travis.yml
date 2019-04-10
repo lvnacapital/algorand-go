@@ -1,0 +1,8 @@
+language: go
+
+go:
+  - 1.12.2
+
+go_import_path: github.com/lvnacapital/algorand
+install: go get -t -v .
+script: go test -v ./...
