@@ -7,13 +7,15 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/lvnacapital/algorand/util"
+
+	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
+
 	"github.com/algorand/go-algorand-sdk/crypto"
 	"github.com/algorand/go-algorand-sdk/encoding/msgpack"
 	"github.com/algorand/go-algorand-sdk/transaction"
-
-	"github.com/lvnacapital/algorand/util"
-	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/algorand/go-algorand-sdk/types"
 )
 
 var (
@@ -41,21 +43,17 @@ func includeSignFlags(ccmd *cobra.Command) {
 	ccmd.Flags().Uint64Var(&lastRound, "lastvalid", 0, "The last round where the transaction may be committed to the ledger (currently ignored)")
 }
 
-// Signing and Submitting a Transaction
-func sign(ccmd *cobra.Command, args []string) error {
-	term := terminal.NewTerminal(os.Stdin, "")
-
+func getWallet() (string, error) {
 	// Get the list of wallets
 	walletsList, err := kmdClient.ListWallets()
 	if err != nil {
-		return fmt.Errorf("Error listing wallets: %s", err)
+		return "", fmt.Errorf("Error listing wallets - %s", err)
 	} else if len(walletsList.Wallets) <= 0 {
-		return fmt.Errorf("no wallets available")
+		return "", fmt.Errorf("No wallets available")
 	}
 
 	var walletID string
-	var walletName string
-	fmt.Printf("\nGot %d wallet(s):\n", len(walletsList.Wallets))
+	fmt.Printf("\nHave %d wallet(s):\n", len(walletsList.Wallets))
 	for i, wallet := range walletsList.Wallets {
 		if walletName != "" { // Find our wallet name in the list
 			if wallet.Name == walletName {
@@ -68,6 +66,7 @@ func sign(ccmd *cobra.Command, args []string) error {
 		}
 	}
 	if walletID == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
 		for {
 			if len(walletsList.Wallets) == 1 {
 				fmt.Printf("Select wallet [%s]: ", "1")
@@ -76,7 +75,7 @@ func sign(ccmd *cobra.Command, args []string) error {
 			}
 			walletNum, err := term.ReadLine()
 			if err != nil {
-				return fmt.Errorf("Error getting wallet number: %s", err)
+				return "", fmt.Errorf("Error getting wallet number: %s", err)
 			}
 			i, err := strconv.Atoi(string(walletNum))
 			if err != nil || i > len(walletsList.Wallets) || i <= 0 {
@@ -91,27 +90,51 @@ func sign(ccmd *cobra.Command, args []string) error {
 	// fmt.Printf("Picked wallet %s.\n", walletID)
 
 	fmt.Printf("Please type in the password for '%s': ", walletName)
-	walletPassword, err := terminal.ReadPassword(int(syscall.Stdin))
+	pw, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		return fmt.Errorf("\nError getting password: %s", err)
+		return "", fmt.Errorf("\nError getting password: %s", err)
 	}
+	walletPassword = string(pw)
 	fmt.Print("\n")
 
 	// Get a wallet handle
-	initRes, err := kmdClient.InitWalletHandle(walletID, string(walletPassword))
+	initRes, err := kmdClient.InitWalletHandle(walletID, walletPassword)
 	if err != nil {
-		return fmt.Errorf("\nError initializing wallet handle: %s", err)
+		return "", fmt.Errorf("\nError initializing wallet handle: %s", err)
 	}
 	walletHandle := initRes.WalletHandleToken
 
+	return walletHandle, nil
+}
+
+// Generate a new address from the wallet handle
+func generateAddrs() error {
+	// gen1Response, err := kmdClient.GenerateKey(walletHandle)
+	// if err != nil {
+	// 	return fmt.Errorf("Error generating key: %s", err)
+	// }
+	// fmt.Printf("Generated address 1 %s.\n", gen1Response.Address)
+	// fromAddr := gen1Response.Address
+
+	// gen2Response, err := kmdClient.GenerateKey(walletHandle)
+	// if err != nil {
+	// 	return fmt.Errorf("Error generating key: %s", err)
+	// }
+	// fmt.Printf("Generated address 2 %s.\n", gen2Response.Address)
+	// toAddr := gen2Response.Address
+
+	return nil
+}
+
+func getFromAddr(walletHandle string) error {
 	keysList, err := kmdClient.ListKeys(walletHandle)
 	if err != nil {
-		return fmt.Errorf("Error listing addresses: %s", err)
+		return fmt.Errorf("Error listing addresses - %s", err)
 	} else if len(keysList.Addresses) <= 0 {
-		return fmt.Errorf("no addresses available")
+		return fmt.Errorf("No addresses available")
 	}
 
-	fmt.Printf("\nGot %d address(es):\n", len(walletsList.Wallets))
+	fmt.Printf("\nHave %d address(es) in '%s':\n", len(keysList.Addresses), walletName)
 	for i, address := range keysList.Addresses {
 		if fromAddr != "" { // Find address in the list
 			if address == fromAddr {
@@ -123,6 +146,7 @@ func sign(ccmd *cobra.Command, args []string) error {
 		}
 	}
 	if fromAddr == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
 		for {
 			if len(keysList.Addresses) == 1 {
 				fmt.Printf("Pick the account address to send from [%s]: ", "1")
@@ -143,29 +167,12 @@ func sign(ccmd *cobra.Command, args []string) error {
 		}
 	}
 
-	keyRes, err := kmdClient.ExportKey(walletHandle, string(walletPassword), fromAddr)
-	if err != nil {
-		return fmt.Errorf("Error extracting secret key: %s", err)
-	}
-	privateKey := keyRes.PrivateKey
+	return nil
+}
 
-	// // Generate a new address from the wallet handle
-	// gen1Response, err := kmdClient.GenerateKey(walletHandle)
-	// if err != nil {
-	// 	return fmt.Errorf("Error generating key: %s", err)
-	// }
-	// fmt.Printf("Generated address 1 %s.\n", gen1Response.Address)
-	// fromAddr := gen1Response.Address
-
-	// // Generate a new address from the wallet handle
-	// gen2Response, err := kmdClient.GenerateKey(walletHandle)
-	// if err != nil {
-	// 	return fmt.Errorf("Error generating key: %s", err)
-	// }
-	// fmt.Printf("Generated address 2 %s.\n", gen2Response.Address)
-	// toAddr := gen2Response.Address
-
+func getToAddr() error {
 	if toAddr == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
 		for {
 			fmt.Print("\nSpecify the account address to send to: ")
 			to, err := term.ReadLine()
@@ -180,7 +187,12 @@ func sign(ccmd *cobra.Command, args []string) error {
 		}
 	}
 
+	return nil
+}
+
+func getAmount() error {
 	if amount == 0 {
+		term := terminal.NewTerminal(os.Stdin, "")
 		for {
 			fmt.Print("\nSpecify the amount to be transferred: ")
 			a, err := term.ReadLine()
@@ -195,7 +207,12 @@ func sign(ccmd *cobra.Command, args []string) error {
 		}
 	}
 
+	return nil
+}
+
+func getNote() error {
 	if noteText == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
 		fmt.Print("\nSpecify some note text (optional): ")
 		n, err := term.ReadLine()
 		if err != nil {
@@ -204,10 +221,14 @@ func sign(ccmd *cobra.Command, args []string) error {
 		noteText = string(n)
 	}
 
+	return nil
+}
+
+func makeTransaction() (tx *types.Transaction, err error) {
 	// Get the suggested transaction parameters
 	txParams, err := algodClient.SuggestedParams()
 	if err != nil {
-		return fmt.Errorf("Error getting suggested tx params: %s", err)
+		return nil, fmt.Errorf("Error getting suggested tx params - %s", err)
 	}
 
 	// Make transaction
@@ -227,39 +248,98 @@ func sign(ccmd *cobra.Command, args []string) error {
 	note := msgpack.Encode(noteText)
 	closeRemainderTo := ""
 	genID := txParams.GenesisID
-	tx, err := transaction.MakePaymentTxn(fromAddr, toAddr, fee, amount, firstRound, lastRound, note, closeRemainderTo, genID)
+	txP, err := transaction.MakePaymentTxn(fromAddr, toAddr, fee, amount, firstRound, lastRound, note, closeRemainderTo, genID)
 	if err != nil {
-		return fmt.Errorf("Error creating transaction: %s", err)
+		return nil, fmt.Errorf("Error creating transaction: %s", err)
 	}
-	fmt.Printf("Made transaction: %+v\n", tx)
+	tx = &txP
+	fmt.Printf("\nMade transaction: %+v\n", txP)
+
+	return
+}
+
+func signTransaction(walletHandle string, tx *types.Transaction) ([]byte, error) {
+	keyRes, err := kmdClient.ExportKey(walletHandle, walletPassword, fromAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Error extracting secret key: %s", err)
+	}
+	privateKey := keyRes.PrivateKey
 
 	// Sign the transaction (using library)
-	txid, stx, err := crypto.SignTransaction(privateKey, tx)
+	_, stx, err := crypto.SignTransaction(privateKey, *tx)
 	if err != nil {
-		return fmt.Errorf("Failed to sign transaction: %s", err)
+		return nil, fmt.Errorf("Failed to sign transaction using library - %s", err)
 	}
-	fmt.Printf("Made signed transaction with TxID %s: %x\n", txid, stx)
+	fmt.Printf("\nMade signed transaction using library: %x\n", stx)
 
 	// Sign the transaction (using `kmd')
-	kmdStx, err := kmdClient.SignTransaction(walletHandle, string(walletPassword), tx)
+	kmdStx, err := kmdClient.SignTransaction(walletHandle, walletPassword, *tx)
 	if err != nil {
-		return fmt.Errorf("Failed to sign transaction with kmd: %s", err)
+		return nil, fmt.Errorf("Failed to sign transaction with `kmd' - %s", err)
 	}
-	fmt.Printf("`kmd' made signed transaction with bytes: %x\n", kmdStx.SignedTransaction)
+	fmt.Printf("\n`kmd' made signed transaction with bytes: %x\n", kmdStx.SignedTransaction)
 
 	if bytes.Equal(kmdStx.SignedTransaction, stx) {
-		fmt.Println("Signed transactions match!")
+		fmt.Println("\nSigned transactions match")
 	} else {
-		fmt.Println("Signed transactions don't match!")
+		return nil, fmt.Errorf("\nSigned transactions don't match")
 	}
 
-	// Broadcast the transaction to the network
-	sendResponse, err := algodClient.SendRawTransaction(stx) // or 'kmdStx.SignedTransaction'
+	return stx, nil
+}
+
+// Broadcast the transaction to the network
+func sendTransaction(stx []byte) error {
+	send, err := algodClient.SendRawTransaction(stx) // or 'kmdStx.SignedTransaction'
 	if err != nil {
 		return fmt.Errorf("Failed to send transaction: %s", err)
 	}
+	fmt.Printf("\nSent transaction with ID: tx-%s\n", send.TxID)
 
-	fmt.Printf("Transaction ID: %s\n", sendResponse.TxID)
+	return nil
+}
+
+// Signing and Submitting a Transaction
+func sign(ccmd *cobra.Command, args []string) error {
+	walletHandle, err := getWallet()
+	if err != nil {
+		return err
+	}
+
+	err = getFromAddr(walletHandle)
+	if err != nil {
+		return err
+	}
+
+	err = getToAddr()
+	if err != nil {
+		return err
+	}
+
+	err = getAmount()
+	if err != nil {
+		return err
+	}
+
+	err = getNote()
+	if err != nil {
+		return err
+	}
+
+	tx, err := makeTransaction()
+	if err != nil {
+		return err
+	}
+
+	stx, err := signTransaction(walletHandle, tx)
+	if err != nil {
+		return err
+	}
+
+	err = sendTransaction(stx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

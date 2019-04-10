@@ -26,6 +26,14 @@ var numKeys int
 var genInvestorCode bool
 var createWallet bool
 
+// Node configuration
+type Node struct {
+	AlgodAddress string
+	KmdAddress   string
+	AlgodToken   string
+	KmdToken     string
+}
+
 // IsValidAddress ...
 func IsValidAddress(address string) bool {
 	if reflect.TypeOf(address).String() != "string" {
@@ -45,25 +53,25 @@ func IsValidAddress(address string) bool {
 }
 
 // MakeClients ...
-func MakeClients(algodAddress string, kmdAddress string, algodToken string, kmdToken string) (algodClient algod.Client, kmdClient kmd.Client, err error) {
+func MakeClients(node *Node) (algodClient algod.Client, kmdClient kmd.Client, err error) {
 	// Create an algod client
-	algodClient, err = algod.MakeClient(algodAddress, algodToken)
+	algodClient, err = algod.MakeClient(node.AlgodAddress, node.AlgodToken)
 	if err != nil {
 		return
 	}
-	fmt.Println("Made an algod client.")
+	fmt.Println("Made an algod client")
 
 	// Create a kmd client
-	kmdClient, err = kmd.MakeClient(kmdAddress, kmdToken)
+	kmdClient, err = kmd.MakeClient(node.KmdAddress, node.KmdToken)
 	if err != nil {
 		return
 	}
-	fmt.Println("Made a kmd client.")
+	fmt.Println("Made a kmd client")
 
 	return
 }
 
-// ReadLine takes in user input.
+// ReadLine takes in user input
 func ReadLine() string {
 	reader := bufio.NewReader(os.Stdin)
 	resp, err := reader.ReadString('\n')
@@ -75,7 +83,7 @@ func ReadLine() string {
 	return strings.TrimSpace(resp)
 }
 
-// ClearScreen clears the terminal window and scrollback buffer.
+// ClearScreen clears the terminal window and scrollback buffer
 func ClearScreen() {
 	if runtime.GOOS != "windows" {
 		// Standard clear command.

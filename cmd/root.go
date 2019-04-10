@@ -17,12 +17,8 @@ var (
 	config      string
 	showVersion bool
 
-	algodAddress string
-	kmdAddress   string
-	algodToken   string
-	kmdToken     string
-	algodClient  algod.Client
-	kmdClient    kmd.Client
+	algodClient algod.Client
+	kmdClient   kmd.Client
 
 	// Subcommand variables
 	walletName     string
@@ -44,12 +40,11 @@ var (
 
 	// AlgorandCmd ...
 	AlgorandCmd = &cobra.Command{
-		Use:           "algorand",
-		Short:         "algorand - node explorer",
-		Long:          ``,
-		SilenceErrors: true,
-		SilenceUsage:  true,
-
+		Use:               "algorand",
+		Short:             "algorand - node explorer",
+		Long:              ``,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
 		PersistentPreRunE: allPreFlight,
 		PreRunE:           rootPreFlight,
 		RunE:              startAlgorand,
@@ -94,12 +89,14 @@ func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
 	// lumber.Prefix("[algorand]")
 	// lumber.Level(logLvl)
 
-	algodAddress = fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("algod-port"))
-	kmdAddress = fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port"))
-	algodToken = viper.GetString("algod-token")
-	kmdToken = viper.GetString("kmd-token")
+	nodeConfig := util.Node{
+		AlgodAddress: fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("algod-port")),
+		KmdAddress:   fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port")),
+		AlgodToken:   viper.GetString("algod-token"),
+		KmdToken:     viper.GetString("kmd-token"),
+	}
 
-	algodClient, kmdClient, err = util.MakeClients(algodAddress, kmdAddress, algodToken, kmdToken)
+	algodClient, kmdClient, err = util.MakeClients(&nodeConfig)
 	if err != nil {
 		fmt.Printf("Failed to make clients: %s", err)
 	}

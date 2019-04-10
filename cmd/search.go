@@ -78,12 +78,14 @@ func resolveAddress() error {
 		if !util.IsValidAddress(addr) {
 			return fmt.Errorf("Malformed address: %s", addr)
 		}
+		fmt.Print("\n")
 	}
 
 	return nil
 }
 
 // e.g. A6R7R6EL2I4QJRHBSRLE2B4AQ3N74MKRWQZARYCXQOR742HC3NGQ
+// e.g. Y7XIQGCRU6IRLLCKSZJVTMQSH6HSDMDVW3WQFVOMNNBNFL5BO6KQ
 func resolveTxID() error {
 	if txID == "" {
 		term := terminal.NewTerminal(os.Stdin, "")
@@ -93,6 +95,8 @@ func resolveTxID() error {
 			return fmt.Errorf("Error getting transaction ID: %s", err)
 		}
 		txID = string(txid)
+	} else {
+		fmt.Print("\n")
 	}
 
 	return nil
@@ -106,16 +110,27 @@ func resolveTxID() error {
 // `Decode' function.
 func readNote(note []byte) {
 	// fmt.Printf("Note size: %d\n", len(transaction.Note))
-	var m map[interface{}]string // interface {}
+	var m interface{}
 	err := msgpack.Decode(note, &m)
 	if err != nil {
 		fmt.Printf("Cannot decode note - %s\n", err)
 	}
 	fmt.Printf("Decoded type: %T\n", m)
 	fmt.Printf("Decoded byte: %v\n", m)
-	fmt.Print("Decoded text:\n")
-	for k, v := range m {
-		fmt.Printf("\t%v: %v\n", k, v)
+	if fmt.Sprintf("%T", m) == "[]uint8" {
+		fmt.Printf("Decoded text: %s\n", m)
+	} else if fmt.Sprintf("%T", m) == "map[interface {}]interface {}" {
+		var m map[interface{}]string
+		err := msgpack.Decode(note, &m)
+		if err != nil {
+			fmt.Printf("Cannot decode note - %s\n", err)
+		}
+		fmt.Print("Decoded text:\n")
+		for k, v := range m {
+			fmt.Printf("\t%v: %v\n", k, v)
+		}
+	} else {
+		fmt.Println("Cannot recognize encoding")
 	}
 }
 
@@ -189,13 +204,14 @@ func find(ccmd *cobra.Command, args []string) error {
 	end := uint64(0)
 
 mainLoop:
-	for i := start; i > end; i-- {
+	for i := start; i >= end && i != 0; i-- {
 		block, err := algodClient.Block(i)
 		if err != nil {
 			return fmt.Errorf("Retrieving block %d - %s", i, err)
 		}
 		// fmt.Printf("Number of transactions in block %d: %d", i, len(block.Txns.Transactions))
 		if !(len(block.Txns.Transactions) > 0) {
+			// fmt.Printf("No transactions in block: %d\n", i)
 			continue
 		}
 
