@@ -80,8 +80,8 @@ func readConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Cannot read config:", err)
-		fmt.Println("Falling back on environment variables.", err)
+		fmt.Println(err)
+		fmt.Println("Falling back on environment variables")
 		// os.Exit(1)
 	}
 }

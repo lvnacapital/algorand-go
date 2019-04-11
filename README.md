@@ -1,4 +1,4 @@
-# Algorand
+# Algorand [![Build Status](https://travis-ci.com/lvnacapital/algorand-go.svg?branch=master)](https://travis-ci.com/lvnacapital/algorand-go)
 
 Algorand is a CLI application that abstracts low-level Algorand node operations.
 
