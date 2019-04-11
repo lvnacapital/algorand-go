@@ -18,8 +18,6 @@ DARWIN := darwin/amd64
 PLATFORMS := $(LINUX) $(WINDOWS) $(DARWIN)
 
 # Tools
-# BUILDALL := $(SCRIPTDIR)/build.sh
-# UPLOAD := $(SCRIPTDIR)/upload.sh
 GO ?= go
 GOX = gox
 BUILD := $(GO) build
@@ -44,13 +42,10 @@ SET := aws configure set
 INVALIDATE := aws cloudfront create-invalidation
 
 # Functions
-# RWILDCARD = $(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call RWILDCARD,$d/,$2))
 HEAD := $(shell $(GIT) rev-parse --short HEAD | $(TR) -d "[ \r\n\']")
 TAG := $(shell $(GIT) describe --always --tags --abbrev=0 | $(TR) -d "[v\r\n]")
 
 # Files
-# SHA256S = $(call RWILDCARD,$(BUILDDIR)/,*.sha256)
-# BINARIES = $(patsubst $(BUILDDIR)/%.sha256,$(BUILDDIR)/%,$(SHA256S))
 BINARIES := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addprefix $(BUILDDIR)/,$(addsuffix /$(BINARY),$(PLATFORMS))))
 SHA256S := $(addsuffix .sha256,$(BINARIES))
 VERIFY := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
@@ -112,7 +107,6 @@ $(BINARY): deps
 buildall: clean deps $(BINARIES)
 $(BINARIES):
 	@echo 'Building for all platforms...'
-#	$(BUILDALL) -b $(BUILDDIR) -p $(PACKAGE) -o '$(PLATFORMS)'
 	$(GOX) -ldflags="-s -X $(PACKAGE)/cmd.version=$(TAG) \
 		-X $(PACKAGE)/cmd.commit=$(HEAD)" \
 		-osarch "$(PLATFORMS)" -output="$(BUILDDIR)/{{.OS}}/{{.Arch}}/$(BINARY)"
@@ -136,7 +130,6 @@ $(VERIFY): %$(BINARY):
 	printf $(dir $*) && cd $(addprefix $(BUILDDIR)/,$(dir $*)) && $(SHA256) -c $(notdir $(wildcard $(BUILDDIR)/$(dir $*)*.sha256))
 
 upload: $(BINARIES) $(SHA256S) verifyall
-#	$(UPLOAD)
 	@echo 'Uploading builds to AWS S3...'
 	$(SYNC) $(BUILDDIR) $(BUCKET) --grants $(ALLACCESS) --region $(REGION)
 #	@echo "Creating invalidation for AWS Cloudfront"
