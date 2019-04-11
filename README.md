@@ -44,7 +44,7 @@ hostname: '127.0.0.1'                 # the Algorand node's IP
 algod-port: '8080'                    # the `algod' process port
 kmd-port: '7833'                      # the `kmd' process port
 algod-token: '374de74fa794248762e5a'  # the `algod' process token
-kmd-token: 'be84aa55f61665645ed680b'  # the `kmd' process token
+kmd-token: 'be84aa55f61665645ed68'    # the `kmd' process token
 ```
 
 These values are taken from:
