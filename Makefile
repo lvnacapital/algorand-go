@@ -24,8 +24,10 @@ BUILD := $(GO) build
 CLEAN := $(GO) clean
 TEST := $(GO) test
 GET := $(GO) get -u
+FMT := $(GO)returns
 LINT := $(GO)lint
 LIST := $(GO) list
+VET := $(GO) vet
 DEP := dep
 GREP := grep
 WHICH := which
@@ -44,12 +46,15 @@ INVALIDATE := aws cloudfront create-invalidation
 # Functions
 HEAD := $(shell $(GIT) rev-parse --short HEAD | $(TR) -d "[ \r\n\']")
 TAG := $(shell $(GIT) describe --always --tags --abbrev=0 | $(TR) -d "[v\r\n]")
+LDFLAGS := -s -X $(PACKAGE)/cmd.version=$(TAG) -X $(PACKAGE)/cmd.commit=$(HEAD)
+OUTPUT := $(BUILDDIR)/{{.OS}}/{{.Arch}}/$(BINARY)
 
 # Files
 BINARIES := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addprefix $(BUILDDIR)/,$(addsuffix /$(BINARY),$(PLATFORMS))))
 SHA256S := $(addsuffix .sha256,$(BINARIES))
 VERIFY := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
-GOPKG := Gopkg.lock
+PACKAGES = $(shell $(LIST) ./... | $(GREP) -v '/vendor/')
+LOCK := Gopkg.lock
 
 # OS- and architecture-specific
 ifeq ($(OS),Windows_NT)
@@ -75,42 +80,64 @@ else
 	endif
 endif
 
-.PHONY: all clean deps lint test build buildall run verify upload sha256all verifyall $(VERIFY)
+.PHONY: all clean deps fmt vet lint quicktest test build buildall run verify upload sha256all verifyall $(VERIFY)
 
-all: lint test run buildall sha256all verifyall
+all: fmt vet lint test run buildall sha256all verifyall
 
 clean:
 	@echo 'Cleaning...'
 	$(CLEAN)
-	$(RMDIR) $(BUILDDIR)
+	$(RMDIR) $(BINARY) $(BUILDDIR)/
 
-deps: $(GOPKG)
-$(GOPKG):
+deps: $(LOCK)
+$(LOCK):
 	@echo 'Getting dependencies...'
 	$(DEP) ensure
 
 lint: deps
 	@echo 'Linting...'
-	$(LINT) -set_exit_status `$(LIST) ./... | $(GREP) -v '/vendor/'`
+#	Capture output and force failure when there is non-empty output
+	@echo '$(LINT) $(PACKAGES)'
+	@OUTPUT=`$(LINT) $(PACKAGES) 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "'$(LINT)' errors:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
 
-test: deps
-	@echo 'Running tests...'
-	$(TEST) -v ./...
-
-build: $(BINARY)
-$(BINARY): deps
+build: deps $(BINARY)
+$(BINARY):
 	@echo 'Building single platform executable...'
 #	$(MKDIR) $(BUILDDIR)
-	$(BUILD) -o $(PWD)/$(BINARY) -v ./.
-	$(CHMOD) +x $(PWD)/$(BINARY)
+	$(BUILD) -o $(BINARY) -ldflags='$(LDFLAGS)' -v ./.
+	$(CHMOD) +x $(BINARY)
 
 buildall: clean deps $(BINARIES)
 $(BINARIES):
 	@echo 'Building for all platforms...'
-	$(GOX) -ldflags="-s -X $(PACKAGE)/cmd.version=$(TAG) \
-		-X $(PACKAGE)/cmd.commit=$(HEAD)" \
-		-osarch "$(PLATFORMS)" -output="$(BUILDDIR)/{{.OS}}/{{.Arch}}/$(BINARY)"
-	
+	$(GOX) -ldflags='$(LDFLAGS)' -osarch '$(PLATFORMS)' -output='$(OUTPUT)'
+
+quicktest: deps
+	@echo 'Running quick tests...'
+	$(TEST) -v $(PACKAGES)
+
+test: deps
+	@echo 'Running tests...'
+	$(TEST) -v -cover $(PACKAGES)
+
+fmt: deps
+	@echo 'Running format checks...'
+	@echo "$(FMT) -l . | $(GREP) -v 'vendor[\/]'"
+#	Capture output and force failure when there is non-empty output
+	@OUTPUT=`$(FMT) -l . | $(GREP) -v 'vendor[\/]' 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "'$(FMT)' must be run on the following files:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+vet: deps
+	go vet $(PACKAGES)
 
 sha256all: $(BINARIES) $(SHA256S)
 $(SHA256S):
@@ -122,7 +149,7 @@ $(SHA256S):
 
 run: $(BINARY)
 	@echo 'Checking single platform executable...'
-	$(PWD)/$(BINARY)
+	./$(BINARY) --version
 
 verifyall: $(BINARIES) $(SHA256S) $(VERIFY)
 $(VERIFY): %$(BINARY):

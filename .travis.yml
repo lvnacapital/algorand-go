@@ -24,6 +24,9 @@ before_install:
   # golint
   - go get -u golang.org/x/lint/golint
 
+  # goreturns
+  - go get -u github.com/sqs/goreturns
+
 install:
   - dep ensure
 
