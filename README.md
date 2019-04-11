@@ -1,13 +1,39 @@
+# Algorand
+
 Algorand is a CLI application that abstracts low-level Algorand node operations.
 
-## Usage
+It uses the [Algorand Go SDK](https://github.com/algorand/go-algorand-sdk). For any questions please refer to the [developer documentation](https://developer.algorand.org/docs/go-sdk).
 
-Simply run `algorand <COMMAND> <FLAGS>`. Running `algorand` or `algorand -h` will show usage and a list of commands.
+It also leverages [Cobra](https://github.com/spf13/cobra) for the CLI interface and [Viper](https://github.com/spf13/viper) for configuration.
+
+## Build
+
+Prerequisites:
+* Install Algorand node using: [https://developer.algorand.org/docs/introduction-installing-node](https://developer.algorand.org/docs/introduction-installing-node)
+* Install `git` from: [https://git-scm.com/downloads](https://git-scm.com/downloads)
+* Install `go` from: [https://golang.org/dl/](https://golang.org/dl/)
+* Install `gox` using: `go get -u github.com/mitchellh/gox`
+* Install `golint` using: `go get -u golang.org/x/lint/golint`
+* Install `dep` using: `curl https://raw.githubusercontent.com/golang/dep/masterinstall.sh | sh`
+* Install `make` (on Windows) from: [http://gnuwin32.sourceforge.net/packages/make.htm](http://gnuwin32.sourceforge.net/packages/make.htm)
+
+To build for all platforms on Linux use:
 
 ```
-Usage:
-  algorand [command] [flags]
+$ make -r build
 ```
+
+To build for the current platform only:
+```
+$ make -r run
+```
+
+To build for all platforms on Windows use:
+```
+$ /c/Program\ Files\ \(x86\)/GnuWin32/bin/make.exe -r build
+```
+
+Refer to the [Makefile](Makefile) for other options.
 
 ## Configuration
 
@@ -21,15 +47,45 @@ algod-token: '374de74fa794248762e5a'  # the `algod' process token
 kmd-token: 'be84aa55f61665645ed680b'  # the `kmd' process token
 ```
 
+These values are taken from:
+* `$NODE/data/algod.net`
+* `$NODE/data/algod.token`
+* `$NODE/data/kmd-<VERSION>/kmd.net`
+* `$NODE/data/kmd-<VERSION>/kmd.token`
+
+Many commands assume that the node is set up as archival in `$NODE/data/config.json`:
+
+```json
+{
+    "Archival": true
+}
+```
+
+## Usage
+
+Ensure the `algod` and `kmd` processes are started and that the node is synchronized to the network as described [here](https://developer.algorand.org/docs/introduction-installing-node).
+
+```
+$ $NODE/goal node start
+Algorand node successfully started!
+$ $NODE/goal kmd start
+Successfully started kmd
+$ $NODE/goal node status
+```
+
+To use simply run `algorand <COMMAND> <FLAGS>`. Running `algorand` or `algorand -h` will show usage and a list of commands.
+
+```
+Usage:
+  algorand [command] [flags]
+```
+
 ## Examples
 
 ### status:
 
 ```
 $ algorand status
-Made an algod client
-Made a kmd client
-
 algod: algod.Client, kmd: kmd.Client
 algod last round: 331484
 algod time since last round: 2432713600
@@ -41,9 +97,6 @@ algod latest version: v4
 
 ```
 $ algorand sign
-Made an algod client
-Made a kmd client
-
 Have 1 wallet(s):
 [1] Name: JSWallet      ID: 895bad84b32bbffa28c2c069d6b49e9f
 Select wallet [1]: 1
@@ -74,9 +127,6 @@ Sent transaction with ID: tx-Y7XIQGCRU6IRLLCKSZJVTMQSH6HSDMDVW3WQFVOMNNBNFL5BO6K
 
 ```
 $ algorand find
-Made an algod client
-Made a kmd client
-
 Find Transaction Using Transaction ID
 -------------------------------------
 Enter the transaction ID: tx-A6R7R6EL2I4QJRHBSRLE2B4AQ3N74MKRWQZARYCXQOR742HC3NGQ
@@ -105,11 +155,10 @@ Decoded byte: map[by:[82 105 99 104 97 114 100 32 68 97 119 107 105 110 115] tex
 Decoded text:
         by: Richard Dawkins
         text: the solution often turns out more beautiful than the puzzle
+```
 
+```
 $ algorand find -t Y7XIQGCRU6IRLLCKSZJVTMQSH6HSDMDVW3WQFVOMNNBNFL5BO6KQ
-Made an algod client
-Made a kmd client
-
 Find Transaction Using Transaction ID
 -------------------------------------
 Found transaction in block: 365682

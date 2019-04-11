@@ -1,4 +1,6 @@
 /.vscode/
 /build/
+/vendor/
 /debug
 /config.yml
+/algorand*

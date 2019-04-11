@@ -106,11 +106,11 @@ func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
 func rootPreFlight(ccmd *cobra.Command, args []string) error {
 	if showVersion {
 		fmt.Printf("algorand %s (%s)\n", version, commit)
-		os.Exit(0)
+	} else {
+		ccmd.HelpFunc()(ccmd, args)
 	}
 
-	ccmd.HelpFunc()(ccmd, args)
-	return fmt.Errorf("")
+	return nil
 }
 
 func startAlgorand(ccmd *cobra.Command, args []string) error {
@@ -152,4 +152,7 @@ func init() {
 
 	// Hidden or aliased commands
 	AlgorandCmd.AddCommand(healthCmd)
+
+	// Behavior options
+	AlgorandCmd.DisableSuggestions = true
 }

@@ -59,14 +59,14 @@ func MakeClients(node *Node) (algodClient algod.Client, kmdClient kmd.Client, er
 	if err != nil {
 		return
 	}
-	fmt.Println("Made an algod client")
+	// fmt.Println("Made an algod client")
 
 	// Create a kmd client
 	kmdClient, err = kmd.MakeClient(node.KmdAddress, node.KmdToken)
 	if err != nil {
 		return
 	}
-	fmt.Println("Made a kmd client")
+	// fmt.Println("Made a kmd client")
 
 	return
 }

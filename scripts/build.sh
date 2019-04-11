@@ -1,36 +1,81 @@
 #!/usr/bin/env bash
 set -e
+set -u
+set -o pipefail
 
-# Use the correct SHA256 library
-SHA256=$(which sha256 || which sha256sum)
+GIT=git
+TR=tr
+RMDIR='rm -rf'
+AWK=awk
+DIRNAME=dirname
+LS=ls
+CAT=cat
+WHICH=which
+UNAME='uname -s'
+GO=go
+GOX=gox
+PLATFORMS='darwin/amd64 linux/amd64 windows/amd64'
+BUILDDIR=${PWD}/build
+SCRIPTDIR=$(${DIRNAME} ${0})
+BINARY=algorand
+USER=lvnacapital
+PACKAGE=github.com/${USER}/${BINARY}
 
-# For versioning
+while getopts ':b:p:o:' opt; do
+  case ${opt} in
+    b)
+      BUILDDIR=$OPTARG
+      ;;
+    p)
+      PACKAGE=$OPTARG
+      ;;
+    o)
+      PLATFORMS=$OPTARG
+      ;;
+    \?)
+      echo "Usage: $(basename $0) -b /path/to/build" >&2
+      exit 1
+      ;;
+    :)
+      echo "Invalid option: -$OPTARG requires an argument" 1>&2
+      exit 1
+      ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [ "$(${UNAME})" == "Darwin" ]; then
+  SHA256=sha256      
+elif [ "$(expr substr $(${UNAME}) 1 5)" == "Linux" ]; then
+  SHA256=sha256sum
+elif [ "$(expr substr $(${UNAME}) 1 10)" == "MINGW32_NT" ]; then
+  SHA256=sha256sum
+elif [ "$(expr substr $(${UNAME}) 1 10)" == "MINGW64_NT" ]; then
+  SHA256=sha256sum
+fi
+
 getCurrCommit() {
-  echo `git rev-parse --short HEAD | tr -d "[ \r\n\']"`
+  echo `${GIT} rev-parse --short HEAD | ${TR} -d "[ \r\n\']"`
 }
 
-# For versioning
 getCurrTag() {
-  echo `git describe --always --tags --abbrev=0 | tr -d "[v\r\n]"`
+  #echo `${GIT} describe --always --tags --abbrev=0 | ${TR} -d "[v\r\n]"`
 }
 
-# Remove any previous builds that may have failed
-[ -e "./build" ] && \
+[ -e "${BUILDDIR}" ] && \
   echo "Cleaning up old builds..." && \
-  rm -rf "./build"
+  ${RMDIR} "${BUILDDIR}"
 
-# Build 'algorand'
-echo "Building 'algorand'..."
-gox -ldflags="-s -X github.com/lvnacapital/algorand/cmd.version=$(getCurrTag)
-  -X github.com/lvnacapital/algorand/cmd.commit=$(getCurrCommit)" \
-  -osarch "darwin/amd64 linux/amd64 windows/amd64" -output="./build/{{.OS}}/{{.Arch}}/algorand"
+echo "Building '${BINARY}'..."
+${GOX} -ldflags="-s -X ${PACKAGE}/cmd.version=$(getCurrTag)
+  -X ${PACKAGE}/cmd.commit=$(getCurrCommit)" \
+  -osarch "${PLATFORMS}" -output="${BUILDDIR}/{{.OS}}/{{.Arch}}/${BINARY}"
 
-# look through each os/arch/file and generate an SHA256 for each
-echo "Generating SHA256 hashes..."
-for os in $(ls ./build); do
-  for arch in $(ls ./build/${os}); do
-    for file in $(ls ./build/${os}/${arch}); do
-      cat "./build/${os}/${arch}/${file}" | ${SHA256} | awk '{print $1}' >> "./build/${os}/${arch}/${file}.sha256"
+echo 'Generating SHA256 hashes...'
+for os in $(${LS} ${BUILDDIR}); do
+  for arch in $(${LS} ${BUILDDIR}/${os}); do
+    for file in $(${LS} ${BUILDDIR}/${os}/${arch}); do
+      ${CAT} "${BUILDDIR}/${os}/${arch}/${file}" | ${SHA256} | ${AWK} "{ print \$1 \"  ${file}\" }" >> "${BUILDDIR}/${os}/${arch}/${file}.sha256"
     done
   done
 done
