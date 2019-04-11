@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lvnacapital/algorand/util"
 	"github.com/spf13/cobra"
@@ -11,12 +12,10 @@ var (
 	// Alias for status
 	healthCmd = &cobra.Command{
 		Hidden: true,
-
-		Use:   "health",
-		Short: "Display the status of the Algorand node",
-		Long:  ``,
-
-		RunE: status,
+		Use:    "health",
+		Short:  "Display the status of the Algorand node",
+		Long:   ``,
+		RunE:   status,
 	}
 
 	// Status command
@@ -24,14 +23,14 @@ var (
 		Use:   "status",
 		Short: "Display the status of the Algorand node",
 		Long:  ``,
-
-		RunE: status,
+		RunE:  status,
 	}
 )
 
 func status(ccmd *cobra.Command, args []string) error {
 	util.ClearScreen()
-	fmt.Printf("\nalgod: %T, kmd: %T\n", algodClient, kmdClient)
+	// fmt.Print("`algod' Status\n--------------\n")
+	// fmt.Printf("algod: %T, kmd: %T\n", algodClient, kmdClient)
 
 	// Get algod status
 	nodeStatus, err := algodClient.Status()
@@ -39,10 +38,13 @@ func status(ccmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error getting algod status: %s", err)
 	}
 
-	fmt.Printf("algod last round: %d\n", nodeStatus.LastRound)
-	fmt.Printf("algod time since last round: %d\n", nodeStatus.TimeSinceLastRound)
-	fmt.Printf("algod catchup: %d\n", nodeStatus.CatchupTime)
-	fmt.Printf("algod latest version: %s\n", nodeStatus.LastVersion)
+	fmt.Printf("Last committed block: %d\n", nodeStatus.LastRound)
+	fmt.Printf("Time since last block: %.1fs\n", time.Duration.Seconds(time.Duration(nodeStatus.TimeSinceLastRound)))
+	fmt.Printf("Sync Time: %.1fs\n", time.Duration.Seconds(time.Duration(nodeStatus.CatchupTime)))
+	fmt.Printf("Last consensus protocol: %s\n", nodeStatus.LastVersion)
+	fmt.Printf("Next consensus protocol: %s\n", nodeStatus.NextVersion)
+	fmt.Printf("Round for next consensus protocol: %d\n", nodeStatus.NextVersionRound)
+	fmt.Printf("Next consensus protocol supported: %t\n", nodeStatus.NextVersionSupported)
 
 	return nil
 }

@@ -73,7 +73,7 @@ Successfully started kmd
 $ $NODE/goal node status
 ```
 
-To use simply run `algorand <COMMAND> <FLAGS>`. Running `algorand` or `algorand -h` will show usage and a list of commands.
+To use simply run `algorand [command] [flags]`. Running `algorand` or `algorand -h` will show usage and a list of commands.
 
 ```
 Usage:
@@ -86,11 +86,13 @@ Usage:
 
 ```
 $ algorand status
-algod: algod.Client, kmd: kmd.Client
-algod last round: 331484
-algod time since last round: 2432713600
-algod catchup: 0
-algod latest version: v4
+Last committed block: 378432
+Time since last block: 2.4s
+Sync Time: 0.0s
+Last consensus protocol: v4
+Next consensus protocol: v4
+Round for next consensus protocol: 378433
+Next consensus protocol supported: true
 ```
 
 ### sign
