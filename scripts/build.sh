@@ -59,7 +59,7 @@ getCurrCommit() {
 }
 
 getCurrTag() {
-  #echo `${GIT} describe --always --tags --abbrev=0 | ${TR} -d "[v\r\n]"`
+  echo `${GIT} describe --always --tags --abbrev=0 | ${TR} -d "[v\r\n]"`
 }
 
 [ -e "${BUILDDIR}" ] && \
