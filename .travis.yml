@@ -1,15 +1,19 @@
+dist: xenial
+
 language: go
 
 go:
-  - 1.12.2
+  - 1.12.x
+  - master
 
 env:
-  - DEP_VERSION=0.5.1
-  - ALGORAND_HOST=127.0.0.1
-  - ALGOD_PORT=8080
-  - KMD_PORT=7833
-  - ALGOD_TOKEN=374de74fa794248762e5a
-  - KMD_TOKEN=be84aa55f61665645ed68
+  global:
+    - DEP_VERSION=0.5.1
+    - ALGORAND_HOST=127.0.0.1
+    - ALGOD_PORT=8080
+    - KMD_PORT=7833
+    - ALGOD_TOKEN=374de74fa794248762e5a
+    - KMD_TOKEN=be84aa55f61665645ed68
 
 go_import_path: github.com/lvnacapital/algorand
 
