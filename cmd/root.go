@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/lvnacapital/algorand/util"
+
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -53,31 +55,34 @@ var (
 
 func readConfig() {
 	if config != "" {
-		// Use config file passed in the flag.
+		// Use config file passed in the flag
 		viper.SetConfigFile(config)
 	} else {
-		// // Find home directory.
-		// homedir "github.com/mitchellh/go-homedir"
-		// dir, err := homedir.Dir()
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	os.Exit(1)
-		// }
-		dir, err := os.Getwd()
+		// Find 'home' directory
+		dir, err := homedir.Dir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		// Search config in "home" or "pwd" directory with name "config.yml".
+		// Find 'pwd'
+		home, err := os.Getwd()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// Search config in 'home' or 'pwd' directory with name 'config.yml'
 		viper.AddConfigPath(dir)
+		viper.AddConfigPath(home)
 		viper.SetConfigName("config")
 		viper.SetConfigType("yml")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Cannot read config:", err)
-		os.Exit(1)
+		fmt.Println("Falling back on environment variables.", err)
+		// os.Exit(1)
 	}
 }
 
@@ -138,6 +143,11 @@ func init() {
 	viper.BindPFlag("algod-token", AlgorandCmd.PersistentFlags().Lookup("algod-token"))
 	viper.BindPFlag("kmd-port", AlgorandCmd.PersistentFlags().Lookup("kmd-port"))
 	viper.BindPFlag("kmd-token", AlgorandCmd.PersistentFlags().Lookup("kmd-token"))
+	viper.BindEnv("host", "ALGORAND_HOST")
+	viper.BindEnv("algod-port", "ALGOD_PORT")
+	viper.BindEnv("algod-token", "ALGOD_TOKEN")
+	viper.BindEnv("kmd-port", "KMD_PORT")
+	viper.BindEnv("kmd-token", "KMD_TOKEN")
 
 	// Commands
 	AlgorandCmd.AddCommand(statusCmd)
