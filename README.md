@@ -20,12 +20,12 @@ Prerequisites:
 To build for all platforms on Linux use:
 
 ```
-$ make -r build
+$ make -r buildall
 ```
 
 To build for the current platform only:
 ```
-$ make -r run
+$ make -r build
 ```
 
 To build for all platforms on Windows use:

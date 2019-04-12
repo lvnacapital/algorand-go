@@ -5,7 +5,8 @@ PACKAGE := github.com/$(USER)/$(BINARY)
 BUCKET := s3://$(USER)/$(BINARY)
 ALLACCESS := read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 REGION := us-west-2
-DISTID := E3B5Z3LYG19QSL
+DISTID := E1Q1GNVQ0NNUN2
+PROFILE := travis-ci
 
 # Directories
 MAKEDIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
@@ -39,9 +40,14 @@ CAT := cat
 AWK := awk
 TR := tr
 GIT := git
-SYNC := aws s3 sync
-SET := aws configure set
-INVALIDATE := aws cloudfront create-invalidation
+ifeq ($(TRAVIS),true)
+AWS := aws
+else
+AWS := aws --profile $(PROFILE)
+endif
+SYNC := $(AWS) s3 sync
+SET := $(AWS) configure set
+INVALIDATE := $(AWS) cloudfront create-invalidation
 
 # Functions
 HEAD := $(shell $(GIT) rev-parse --short HEAD | $(TR) -d "[ \r\n\']")
@@ -96,7 +102,7 @@ $(LOCK):
 
 lint: deps
 	@echo 'Linting...'
-#	Capture output and force failure when there is non-empty output
+# Capture output and force failure when there is non-empty output
 	@echo '$(LINT) $(PACKAGES)'
 	@OUTPUT=`$(LINT) $(PACKAGES) 2>&1`; \
 	if [ "$$OUTPUT" ]; then \
@@ -128,7 +134,7 @@ test: deps
 fmt: deps
 	@echo 'Running format checks...'
 	@echo "$(FMT) -l . | $(GREP) -v 'vendor[\/]'"
-#	Capture output and force failure when there is non-empty output
+# Capture output and force failure when there is non-empty output
 	@OUTPUT=`$(FMT) -l . | $(GREP) -v 'vendor[\/]' 2>&1`; \
 	if [ "$$OUTPUT" ]; then \
 		echo "'$(FMT)' must be run on the following files:"; \
@@ -141,7 +147,7 @@ vet: deps
 
 sha256all: $(BINARIES) $(SHA256S)
 $(SHA256S):
-#	'$(@F)' is equivalent to '$(notdir $@)'
+# '$(@F)' is equivalent to '$(notdir $@)'
 	@echo 'Generating SHA256 hash...'
 	$(CAT) $(subst .sha256,,$@) | $(SHA256) | $(AWK) "{ print \$$1 \"  $(subst .sha256,,$(@F))\" }" > $@
 #	@echo 'Verifying SHA256 checksum...'
@@ -157,8 +163,10 @@ $(VERIFY): %$(BINARY):
 	printf $(dir $*) && cd $(addprefix $(BUILDDIR)/,$(dir $*)) && $(SHA256) -c $(notdir $(wildcard $(BUILDDIR)/$(dir $*)*.sha256))
 
 upload: $(BINARIES) $(SHA256S) verifyall
+# Travis CI deploy to AWS S3 only adds files to your bucket.
+# To remove deprecated files use --delete or do so manually in the console.
 	@echo 'Uploading builds to AWS S3...'
-	$(SYNC) $(BUILDDIR) $(BUCKET) --grants $(ALLACCESS) --region $(REGION)
-#	@echo "Creating invalidation for AWS Cloudfront"
-#	$(SET) preview.cloudfront true
-#	$(INVALIDATE) --distribution-id $(DISTID) --paths /$(BINARY)
+	$(SYNC) $(BUILDDIR) $(BUCKET) --delete --grants $(ALLACCESS) --region $(REGION)
+	@echo "Invalidate previous versions in AWS CloudFront..."
+	$(SET) preview.cloudfront true
+	$(INVALIDATE) --distribution-id $(DISTID) --paths /$(BINARY)

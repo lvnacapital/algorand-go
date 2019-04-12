@@ -40,7 +40,7 @@ var (
 	version string
 	commit  string
 
-	// AlgorandCmd ...
+	// AlgorandCmd defines the top-level command
 	AlgorandCmd = &cobra.Command{
 		Use:               "algorand",
 		Short:             "algorand - node explorer",
@@ -80,17 +80,16 @@ func readConfig() {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
-		fmt.Println("Falling back on environment variables")
-		// os.Exit(1)
+		// Falling back on environment variables
+		// fmt.Println(err)
 	}
 }
 
 func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
-	// // Convert the log level.
+	// Convert the log level.
 	// logLvl := lumber.LvlInt(viper.GetString("log-level"))
 
-	// // Configure the logger.
+	// Configure the logger.
 	// lumber.Prefix("[algorand]")
 	// lumber.Level(logLvl)
 

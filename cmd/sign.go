@@ -300,45 +300,40 @@ func sendTransaction(stx []byte) error {
 }
 
 // Signing and Submitting a Transaction
-func sign(ccmd *cobra.Command, args []string) error {
+func sign(ccmd *cobra.Command, args []string) (err error) {
 	walletHandle, err := getWallet()
 	if err != nil {
-		return err
+		return
 	}
 
-	err = getFromAddr(walletHandle)
-	if err != nil {
-		return err
+	if err = getFromAddr(walletHandle); err != nil {
+		return
 	}
 
-	err = getToAddr()
-	if err != nil {
-		return err
+	if err = getToAddr(); err != nil {
+		return
 	}
 
-	err = getAmount()
-	if err != nil {
-		return err
+	if err = getAmount(); err != nil {
+		return
 	}
 
-	err = getNote()
-	if err != nil {
-		return err
+	if err = getNote(); err != nil {
+		return
 	}
 
 	tx, err := makeTransaction()
 	if err != nil {
-		return err
+		return
 	}
 
 	stx, err := signTransaction(walletHandle, tx)
 	if err != nil {
-		return err
+		return
 	}
 
-	err = sendTransaction(stx)
-	if err != nil {
-		return err
+	if err = sendTransaction(stx); err != nil {
+		return
 	}
 
 	return nil

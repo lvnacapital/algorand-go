@@ -1,38 +1,53 @@
 dist: xenial
-
 language: go
-
 go:
-  - 1.12.x
-  - master
-
+- 1.12.x
+- master
+python:
+  - 3.7.1
+cache: false
 env:
   global:
-    - DEP_VERSION=0.5.1
-    - ALGORAND_HOST=127.0.0.1
-    - ALGOD_PORT=8080
-    - KMD_PORT=7833
-    - ALGOD_TOKEN=374de74fa794248762e5a
-    - KMD_TOKEN=be84aa55f61665645ed68
-
+  - DEP_VERSION=0.5.1
+  - ALGORAND_HOST=127.0.0.1
+  - ALGOD_PORT=8080
+  - KMD_PORT=7833
+  - ALGOD_TOKEN=374de74fa794248762e5a
+  - KMD_TOKEN=be84aa55f61665645ed68
+  - CLOUDFRONT_DISTRIBUTION_ID=E1Q1GNVQ0NNUN2
 go_import_path: github.com/lvnacapital/algorand
-
 before_install:
-  # dep : Download the binary to bin folder in $GOPATH and make the binary executable
-  - curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep
-  - chmod +x $GOPATH/bin/dep
-
-  # gox:
-  - go get -u github.com/mitchellh/gox
-
-  # golint
-  - go get -u golang.org/x/lint/golint
-
-  # goreturns
-  - go get -u github.com/sqs/goreturns
-
+- curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64
+  -o ${GOPATH}/bin/dep
+- chmod +x ${GOPATH}/bin/dep
+- go get -u github.com/mitchellh/gox
+- go get -u golang.org/x/lint/golint
+- go get -u github.com/sqs/goreturns
+- pip install awscli --upgrade --user
 install:
-  - dep ensure
-
+- dep ensure
 script:
-  - make -r all
+- make -r all
+deploy:
+  provider: s3
+  access_key_id: AKIAQSDIUZYMB3VSNBF6
+  secret_access_key:
+    secure: sqXx8M1wL+GZEiB7YlfM2qeWTj19iZ8V63HYjp8HVEw32TH0xBUKmUgOHpBwFjgy5TbesdoM4XdIa0LJ6tfVhCUyEn1xnZ6tVNp1xXEn03xm6UuhgBTIsPuBFzk+cmEMrh/e3EOKyN6gZdsIHr76rlFY5JplcIm2B68aD/HW2eNRjRypgwjVdojF20ba14+chT2m4KPYbbb5z2i55MCM/3MXhzFJmMn3H6XXfqQNrZlkNCVRHaVc8G3vKxo+1by4lrnvQ0sAeABSz6ov+Flwx+I+71Q8omWwcBb6cPi1owEKpgn5tGcvd89AFlJBdeBh12f0XrznVoCi9b4p9atveLVanD50Hflg4oNAQR/Ve8ipOftvcvYXHK2Onla3YuHH2CQpocbFpyb7kyS26hHumXscoU2A31IkSY40saHI77Ak5AUZ3uOk2FvNe34HhBVBSdh+dyc8nDwHDeLj9qTxfaZfBy95kGSHVrVLMJm1Eh9inFBZH0E/TFuvWr1K2lYQPfJ9QvD39gkSBmDtlY7RkQwXq/uocxk1r1QD/01V+qnPSpQ9NCcQu6roP8aqc71g6fm/0blsXPDObXBRkow5w0hpZi382QMWtJ1QWMKwED5l6/8ShkUorTTM6WZ6uHJkn4wJ//Pujt0dQu6uzI8aj4lsf5FEURF3WqKQbiRqa+0=
+  bucket: lvnacapital
+  local-dir: build
+  upload-dir: algorand
+  acl: public_read
+  region: us-west-2
+  skip_cleanup: true
+  detect_encoding: false
+  default_text_charset: ''
+  cache_control: no-cache
+  dot_match: true
+  #endpoint: https://sfo2.digitaloceanspaces.com
+  on:
+    repo: lvnacapital/algorand-go
+    branch: master
+    go: 1.12.x
+after_deploy:
+  - aws configure set preview.cloudfront true
+  - test $TRAVIS_BRANCH = 'master' && aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths /algorand
