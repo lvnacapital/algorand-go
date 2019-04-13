@@ -44,8 +44,7 @@ func IsValidAddress(address string) bool {
 		return false
 	}
 
-	_, err := types.DecodeAddress(address)
-	if err != nil {
+	if _, err := types.DecodeAddress(address); err != nil {
 		return false
 	}
 
@@ -55,15 +54,13 @@ func IsValidAddress(address string) bool {
 // MakeClients ...
 func MakeClients(node *Node) (algodClient algod.Client, kmdClient kmd.Client, err error) {
 	// Create an algod client
-	algodClient, err = algod.MakeClient(node.AlgodAddress, node.AlgodToken)
-	if err != nil {
+	if algodClient, err = algod.MakeClient(node.AlgodAddress, node.AlgodToken); err != nil {
 		return
 	}
 	// fmt.Println("Made an algod client")
 
 	// Create a kmd client
-	kmdClient, err = kmd.MakeClient(node.KmdAddress, node.KmdToken)
-	if err != nil {
+	if kmdClient, err = kmd.MakeClient(node.KmdAddress, node.KmdToken); err != nil {
 		return
 	}
 	// fmt.Println("Made a kmd client")

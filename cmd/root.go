@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/lvnacapital/algorand/util"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -25,6 +25,7 @@ var (
 	// Subcommand variables
 	walletName     string
 	walletPassword string
+	walletMnemonic string
 	blockNumber    uint64
 	fromAddr       string
 	toAddr         string
@@ -59,14 +60,14 @@ func readConfig() {
 		viper.SetConfigFile(config)
 	} else {
 		// Find 'home' directory
-		dir, err := homedir.Dir()
+		dir, err := os.UserHomeDir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
 		// Find 'pwd'
-		home, err := os.Getwd()
+		pwd, err := os.Getwd()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -74,7 +75,11 @@ func readConfig() {
 
 		// Search config in 'home' or 'pwd' directory with name 'config.yml'
 		viper.AddConfigPath(dir)
-		viper.AddConfigPath(home)
+		viper.AddConfigPath(pwd)
+		if os.Getenv("GOTEST") == "true" {
+			// During testing 'os.Getwd()' might not be not root
+			viper.AddConfigPath(filepath.Join(pwd, ".."))
+		}
 		viper.SetConfigName("config")
 		viper.SetConfigType("yml")
 	}
@@ -100,8 +105,7 @@ func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
 		KmdToken:     viper.GetString("kmd-token"),
 	}
 
-	algodClient, kmdClient, err = util.MakeClients(&nodeConfig)
-	if err != nil {
+	if algodClient, kmdClient, err = util.MakeClients(&nodeConfig); err != nil {
 		fmt.Printf("Failed to make clients: %s", err)
 	}
 	return err

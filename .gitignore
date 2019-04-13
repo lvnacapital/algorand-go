@@ -4,3 +4,5 @@
 /debug
 /config.yml
 /algorand*
+/debug
+debug.log

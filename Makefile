@@ -23,7 +23,7 @@ GO ?= go
 GOX = gox
 BUILD := $(GO) build
 CLEAN := $(GO) clean
-TEST := $(GO) test
+TEST := env GOTEST=true $(GO) test
 GET := $(GO) get -u
 FMT := $(GO)returns
 LINT := $(GO)lint
@@ -31,7 +31,6 @@ LIST := $(GO) list
 VET := $(GO) vet
 DEP := dep
 GREP := grep
-WHICH := which
 SHA256 := sha256sum
 RMDIR := rm -rf
 MKDIR := mkdir -p
@@ -60,6 +59,7 @@ BINARIES := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(a
 SHA256S := $(addsuffix .sha256,$(BINARIES))
 VERIFY := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
 PACKAGES = $(shell $(LIST) ./... | $(GREP) -v '/vendor/')
+EXCLUDED := -e 'config.yml' -e 'vendor/' -e '.vscode/'
 LOCK := Gopkg.lock
 
 # OS- and architecture-specific
@@ -93,7 +93,7 @@ all: fmt vet lint test run buildall sha256all verifyall
 clean:
 	@echo 'Cleaning...'
 	$(CLEAN)
-	$(RMDIR) $(BINARY) $(BUILDDIR)/
+	$(GIT) clean -x -d -f $(EXCLUDED)
 
 deps: $(LOCK)
 $(LOCK):
@@ -143,7 +143,7 @@ fmt: deps
 	fi
 
 vet: deps
-	go vet $(PACKAGES)
+	$(VET) $(PACKAGES)
 
 sha256all: $(BINARIES) $(SHA256S)
 $(SHA256S):

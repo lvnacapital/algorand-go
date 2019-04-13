@@ -79,14 +79,6 @@
   version = "v1.8.0"
 
 [[projects]]
-  digest = "1:5d231480e1c64a726869bc4142d270184c419749d34f167646baa21008eb0a79"
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "af06845cf3004701891bf4fdb884bfe4920b3727"
-  version = "v1.1.0"
-
-[[projects]]
   digest = "1:53bc4cd4914cd7cd52139990d5170d6dc99067ae31c56530621b18b35fc30318"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
@@ -211,7 +203,6 @@
     "github.com/algorand/go-algorand-sdk/mnemonic",
     "github.com/algorand/go-algorand-sdk/transaction",
     "github.com/algorand/go-algorand-sdk/types",
-    "github.com/mitchellh/go-homedir",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "golang.org/x/crypto/ssh/terminal",

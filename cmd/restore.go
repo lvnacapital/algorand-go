@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/algorand/go-algorand-sdk/client/kmd"
 	"github.com/algorand/go-algorand-sdk/mnemonic"
 	"github.com/algorand/go-algorand-sdk/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
@@ -15,34 +16,50 @@ var (
 		Use:   "restore",
 		Short: "Backs up a wallet, and generates an account within that wallet",
 		Long:  ``,
-
-		RunE: restore,
+		RunE:  restore,
 	}
 )
 
 func init() {
-	includerestoreFlags(restoreCmd)
+	includeRestoreFlags(restoreCmd)
 }
 
-func includerestoreFlags(ccmd *cobra.Command) {
-	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "testwallet", "Set the wallet to be used for the selected operation")
-	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "testpassword", "The wallet's password")
+func includeRestoreFlags(ccmd *cobra.Command) {
+	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "", "Wallet name")
+	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "", "Wallet password")
+	ccmd.Flags().StringVarP(&walletMnemonic, "mnemonic", "m", "", "Private key mnemonic")
+}
+
+func getPrivateKey() (keyBytes []byte, err error) {
+	if walletMnemonic == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
+		for {
+			fmt.Print("\nEnter the wallet mnemonic: ")
+			m, err := term.ReadLine()
+			if err != nil {
+				return nil, fmt.Errorf("Error getting mnemonic - %v", err)
+			}
+			walletMnemonic = string(m)
+			if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
+				fmt.Printf("Failed to get key. Try again - %v", err)
+				continue
+			}
+			break
+		}
+	} else {
+		if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
+			return nil, fmt.Errorf("Failed to get key from -m: %v", err)
+		}
+	}
+
+	return
 }
 
 // To restore a wallet, convert the phrase to a key and pass it to CreateWallet. This call will fail if the wallet already exists:
 func restore(ccmd *cobra.Command, args []string) error {
-	kmdAddress := fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port"))
-	kmdToken := viper.GetString("kmd-token")
-
-	// Create a kmd client
-	kmdClient, err := kmd.MakeClient(kmdAddress, kmdToken)
+	keyBytes, err := getPrivateKey()
 	if err != nil {
-		return fmt.Errorf("Failed to make kmd client: %s", err)
-	}
-	restorePhrase := "fire enlist diesel stamp nuclear chunk student stumble call snow flock brush example slab guide choice option recall south kangaroo hundred matrix school above zero"
-	keyBytes, err := mnemonic.ToKey(restorePhrase)
-	if err != nil {
-		return fmt.Errorf("Failed to get key: %s", err)
+		return err
 	}
 
 	var mdk types.MasterDerivationKey
@@ -51,7 +68,11 @@ func restore(ccmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Error creating wallet: %s", err)
 	}
+
 	fmt.Printf("Created wallet '%s' with ID: %s\n", cwResponse.Wallet.Name, cwResponse.Wallet.ID)
+	if os.Getenv("GOTEST") == "true" {
+		ccmd.Print("Created wallet successfully.")
+	}
 
 	return nil
 }
