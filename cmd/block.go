@@ -11,7 +11,7 @@ import (
 var (
 	blockCmd = &cobra.Command{
 		Use:   "block",
-		Short: "displays the information of a block",
+		Short: "Display the information of a block",
 		Long:  ``,
 		RunE:  block,
 	}
@@ -22,7 +22,7 @@ func init() {
 }
 
 func includeBlockFlags(ccmd *cobra.Command) {
-	ccmd.Flags().Uint64VarP(&blockNumber, "block", "b", 0, "The block number to retrieve data for")
+	ccmd.Flags().Uint64VarP(&blockNumber, "block", "b", 0, "Block number to retrieve data for")
 }
 
 func block(ccmd *cobra.Command, args []string) error {

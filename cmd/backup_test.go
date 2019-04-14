@@ -9,7 +9,6 @@ import (
 )
 
 func TestBackup(t *testing.T) {
-	t.Parallel()
 	if os.Getenv("CI") == "true" && !kmdAvailable {
 		// No Algorand node available
 		return

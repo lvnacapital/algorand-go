@@ -34,6 +34,7 @@ var (
 	lastRound   uint64
 	addr        string
 	txID        string
+	generate    bool
 	// WalletName ...
 	WalletName string
 	// WalletPassword ...
@@ -159,7 +160,8 @@ func init() {
 	// Commands
 	AlgorandCmd.AddCommand(statusCmd)
 	AlgorandCmd.AddCommand(blockCmd)
-	AlgorandCmd.AddCommand(createCmd)
+	AlgorandCmd.AddCommand(walletCmd)
+	AlgorandCmd.AddCommand(addressCmd)
 	AlgorandCmd.AddCommand(backupCmd)
 	AlgorandCmd.AddCommand(restoreCmd)
 	AlgorandCmd.AddCommand(getCmd)

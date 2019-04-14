@@ -10,7 +10,48 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// GetWallet finds and returns the wallet handle
+// CheckWallet checks wallet parameters.
+func CheckWallet() error {
+	// Get the list of wallets
+	walletsList, err := kmdClient.ListWallets()
+	if err != nil {
+		return fmt.Errorf("Error listing wallets - %v", err)
+	}
+	walletMap := make(map[string]string)
+	for _, wallet := range walletsList.Wallets {
+		walletMap[wallet.Name] = wallet.ID
+	}
+
+	if WalletName == "" {
+		term := terminal.NewTerminal(os.Stdin, "")
+		for {
+			fmt.Print("Specify a wallet name: ")
+			w, err := term.ReadLine()
+			if err != nil {
+				return fmt.Errorf("Error getting wallet name - %v", err)
+			}
+			if _, found := walletMap[string(w)]; !found {
+				WalletName = string(w)
+				fmt.Print("\n")
+				break
+			}
+		}
+	}
+
+	if WalletPassword == "" {
+		fmt.Printf("Please type in the password for '%s': ", WalletName)
+		pw, err := terminal.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			return fmt.Errorf("Error getting wallet password - %v", err)
+		}
+		WalletPassword = string(pw)
+		fmt.Print("\n")
+	}
+
+	return nil
+}
+
+// GetWallet finds and returns the wallet handle.
 func GetWallet() (string, error) {
 	// Get the list of wallets
 	walletsList, err := kmdClient.ListWallets()
@@ -61,20 +102,40 @@ func GetWallet() (string, error) {
 		fmt.Printf("Please type in the password for '%s': ", WalletName)
 		pw, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
-			return "", fmt.Errorf("\nError getting password: %s", err)
+			return "", fmt.Errorf("\nError getting password - %v", err)
 		}
 		WalletPassword = string(pw)
 		fmt.Print("\n")
 	}
 
-	// Get a wallet handle
+	walletHandle, err := getWalletHandle(walletID)
+	if err != nil {
+		return "", err
+	}
+
+	return walletHandle, nil
+}
+
+// Get a wallet handle
+func getWalletHandle(walletID string) (string, error) {
 	initRes, err := kmdClient.InitWalletHandle(walletID, WalletPassword)
 	if err != nil {
-		return "", fmt.Errorf("\nError initializing wallet handle: %s", err)
+		return "", fmt.Errorf("\nError initializing wallet handle - %v", err)
 	}
 	walletHandle := initRes.WalletHandleToken
 
 	return walletHandle, nil
+}
+
+// Generate a new address from the wallet handle
+func genKey(walletHandle string) error {
+	genResponse, err := kmdClient.GenerateKey(walletHandle)
+	if err != nil {
+		return fmt.Errorf("Error generating key - %v", err)
+	}
+	fmt.Printf("Generated address: %s\n", genResponse.Address)
+
+	return nil
 }
 
 func getPrivateKey() (keyBytes []byte, err error) {
