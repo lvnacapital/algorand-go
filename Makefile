@@ -42,6 +42,7 @@ CAT := cat
 AWK := awk
 TR := tr
 GIT := git
+READ := read
 ifeq ($(CI),true)
 AWS := aws
 else
@@ -50,9 +51,9 @@ endif
 SYNC := $(AWS) s3 sync
 SET := $(AWS) configure set
 INVALIDATE := $(AWS) cloudfront create-invalidation
-TRAVIS := travis
-LOGIN := $(TRAVIS) login --pro
-ENCRYPT := $(TRAVIS) encrypt --com
+TRAVISCLI := travis
+LOGIN := $(TRAVISCLI) login --pro
+ENCRYPT := $(TRAVISCLI) encrypt --com
 
 # Functions
 HEAD := $(shell $(GIT) rev-parse --short HEAD | $(TR) -d "[ \r\n\']")
@@ -183,4 +184,4 @@ login:
 
 secure: login $(SECUREVARS)
 $(SECUREVARS):
-	@read -p '$@=' value; $(ENCRYPT) $@=$$value --add env.global
+	@$(READ) -p '$@=' value; $(ENCRYPT) $@=$$value --add env.global
