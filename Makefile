@@ -1,3 +1,5 @@
+SHELL = /bin/sh
+
 # Configuration
 USER := lvnacapital
 BINARY := algorand
@@ -7,11 +9,12 @@ ALLACCESS := read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 REGION := us-west-2
 DISTID := E1Q1GNVQ0NNUN2
 PROFILE := travis-ci
+SECUREVARS := ALGORAND_HOST ALGOD_PORT KMD_PORT ALGOD_TOKEN KMD_TOKEN AWS_SECRET_ACCESS_KEY AWS_ACCESS_KEY_ID
 
 # Directories
 MAKEDIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 SRCDIR := $(PWD)
-BUILDDIR := build
+DESTDIR := build
 SCRIPTDIR := scripts
 LINUX := linux/amd64
 WINDOWS := windows/amd64
@@ -33,13 +36,13 @@ DEP := dep
 GREP := grep
 SHA256 := sha256sum
 RMDIR := rm -rf
-MKDIR := mkdir -p
+MKDIR := mkdir
 CHMOD := chmod
 CAT := cat
 AWK := awk
 TR := tr
 GIT := git
-ifeq ($(TRAVIS),true)
+ifeq ($(CI),true)
 AWS := aws
 else
 AWS := aws --profile $(PROFILE)
@@ -47,17 +50,20 @@ endif
 SYNC := $(AWS) s3 sync
 SET := $(AWS) configure set
 INVALIDATE := $(AWS) cloudfront create-invalidation
+TRAVIS := travis
+LOGIN := $(TRAVIS) login --pro
+ENCRYPT := $(TRAVIS) encrypt --com
 
 # Functions
 HEAD := $(shell $(GIT) rev-parse --short HEAD | $(TR) -d "[ \r\n\']")
 TAG := $(shell $(GIT) describe --always --tags --abbrev=0 | $(TR) -d "[v\r\n]")
-LDFLAGS := -s -X $(PACKAGE)/cmd.version=$(TAG) -X $(PACKAGE)/cmd.commit=$(HEAD)
-OUTPUT := $(BUILDDIR)/{{.OS}}/{{.Arch}}/$(BINARY)
+LDFLAGS := -s -X $(PACKAGE)/cmd.version=$(TAG) -X $(PACKAGE)/cmd.commit=$(HEAD) -X $(PACKAGE)/cmd.binary=$(BINARY)
+OUTPUT := $(DESTDIR)/{{.OS}}/{{.Arch}}/$(BINARY)
 
 # Files
-BINARIES := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addprefix $(BUILDDIR)/,$(addsuffix /$(BINARY),$(PLATFORMS))))
+BINARIES := $(patsubst $(DESTDIR)/$(WINDOWS)/%,$(DESTDIR)/$(WINDOWS)/%.exe,$(addprefix $(DESTDIR)/,$(addsuffix /$(BINARY),$(PLATFORMS))))
 SHA256S := $(addsuffix .sha256,$(BINARIES))
-VERIFY := $(patsubst $(BUILDDIR)/$(WINDOWS)/%,$(BUILDDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
+VERIFY := $(patsubst $(DESTDIR)/$(WINDOWS)/%,$(DESTDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
 PACKAGES = $(shell $(LIST) ./... | $(GREP) -v '/vendor/')
 EXCLUDED := -e 'config.yml' -e 'vendor/' -e '.vscode/'
 LOCK := Gopkg.lock
@@ -86,7 +92,7 @@ else
 	endif
 endif
 
-.PHONY: all clean deps fmt vet lint quicktest test build buildall run verify upload sha256all verifyall $(VERIFY)
+.PHONY: all clean deps fmt vet lint quicktest test build buildall run verify upload sha256all verifyall $(VERIFY) login secure
 
 all: fmt vet lint test run buildall sha256all verifyall
 
@@ -114,7 +120,7 @@ lint: deps
 build: deps $(BINARY)
 $(BINARY):
 	@echo 'Building single platform executable...'
-#	$(MKDIR) $(BUILDDIR)
+#	$(MKDIR) $(DESTDIR)
 	$(BUILD) -o $(BINARY) -ldflags='$(LDFLAGS)' -v ./.
 	$(CHMOD) +x $(BINARY)
 
@@ -151,7 +157,7 @@ $(SHA256S):
 	@echo 'Generating SHA256 hash...'
 	$(CAT) $(subst .sha256,,$@) | $(SHA256) | $(AWK) "{ print \$$1 \"  $(subst .sha256,,$(@F))\" }" > $@
 #	@echo 'Verifying SHA256 checksum...'
-#	printf $(dir $(patsubst $(BUILDDIR)/%.sha256,%,$@)) && cd $(dir $@) && $(SHA256) -c $(@F)
+#	printf $(dir $(patsubst $(DESTDIR)/%.sha256,%,$@)) && cd $(dir $@) && $(SHA256) -c $(@F)
 
 run: $(BINARY)
 	@echo 'Checking single platform executable...'
@@ -160,13 +166,21 @@ run: $(BINARY)
 verifyall: $(BINARIES) $(SHA256S) $(VERIFY)
 $(VERIFY): %$(BINARY):
 	@echo 'Verifying SHA256 checksums...'
-	printf $(dir $*) && cd $(addprefix $(BUILDDIR)/,$(dir $*)) && $(SHA256) -c $(notdir $(wildcard $(BUILDDIR)/$(dir $*)*.sha256))
+	printf $(dir $*) && cd $(addprefix $(DESTDIR)/,$(dir $*)) && $(SHA256) -c $(notdir $(wildcard $(DESTDIR)/$(dir $*)*.sha256))
 
 upload: $(BINARIES) $(SHA256S) verifyall
 # Travis CI deploy to AWS S3 only adds files to your bucket.
 # To remove deprecated files use --delete or do so manually in the console.
 	@echo 'Uploading builds to AWS S3...'
-	$(SYNC) $(BUILDDIR) $(BUCKET) --delete --grants $(ALLACCESS) --region $(REGION)
+	$(SYNC) $(DESTDIR) $(BUCKET) --delete --grants $(ALLACCESS) --region $(REGION)
 	@echo "Invalidate previous versions in AWS CloudFront..."
 	$(SET) preview.cloudfront true
 	$(INVALIDATE) --distribution-id $(DISTID) --paths /$(BINARY)
+
+login:
+	@echo 'Making secure keys for Travis CI (interactive)...'
+	$(LOGIN)
+
+secure: login $(SECUREVARS)
+$(SECUREVARS):
+	@read -p '$@=' value; $(ENCRYPT) $@=$$value --add env.global

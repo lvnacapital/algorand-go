@@ -10,8 +10,8 @@ import (
 
 var (
 	blockCmd = &cobra.Command{
-		Use:   "status",
-		Short: "Display information of a block",
+		Use:   "block",
+		Short: "displays the information of a block",
 		Long:  ``,
 		RunE:  block,
 	}

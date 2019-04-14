@@ -18,6 +18,7 @@ var (
 	// Root variables
 	config      string
 	showVersion bool
+	binary      string
 
 	algodClient algod.Client
 	kmdClient   kmd.Client
@@ -43,8 +44,8 @@ var (
 
 	// AlgorandCmd defines the top-level command
 	AlgorandCmd = &cobra.Command{
-		Use:               "algorand",
-		Short:             "algorand - node explorer",
+		Use:               binary,
+		Short:             fmt.Sprintf("%s - Interactive Algorand node explorer.", binary),
 		Long:              ``,
 		SilenceErrors:     true,
 		SilenceUsage:      true,
@@ -113,7 +114,7 @@ func allPreFlight(ccmd *cobra.Command, args []string) (err error) {
 
 func rootPreFlight(ccmd *cobra.Command, args []string) error {
 	if showVersion {
-		fmt.Printf("algorand %s (%s)\n", version, commit)
+		fmt.Printf("%s %s (%s)\n", binary, version, commit)
 	} else {
 		ccmd.HelpFunc()(ccmd, args)
 	}
@@ -130,17 +131,17 @@ func init() {
 	cobra.OnInitialize(readConfig)
 
 	// Local flags
-	AlgorandCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Display the application version")
+	AlgorandCmd.Flags().BoolVar(&showVersion, "version", false, "Display the application version")
 
 	// Persistent flags
-	AlgorandCmd.PersistentFlags().StringVarP(&config, "config", "c", "", "Path to configuration file")
-	AlgorandCmd.PersistentFlags().String("log-level", "INFO", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
+	AlgorandCmd.PersistentFlags().StringVarP(&config, "config", "c", "", "Path to configuration FILE")
+	// AlgorandCmd.PersistentFlags().String("log-level", "INFO", "Output level of logs (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)")
 	AlgorandCmd.PersistentFlags().StringP("host", "H", "127.0.0.1", "Algorand node hostname/IP")
-	AlgorandCmd.PersistentFlags().String("algod-port", "8080", "Port used by `algod'")
-	AlgorandCmd.PersistentFlags().String("algod-token", "", "Authorization token for `algod'")
-	AlgorandCmd.PersistentFlags().String("kmd-port", "7833", "Port used by `kmd'")
-	AlgorandCmd.PersistentFlags().String("kmd-token", "", "Authorization token for `kmd'")
-	viper.BindPFlag("log-level", AlgorandCmd.PersistentFlags().Lookup("log-level"))
+	AlgorandCmd.PersistentFlags().String("algod-port", "8080", "Port used by 'algod'")
+	AlgorandCmd.PersistentFlags().String("algod-token", "", "Authorization token for 'algod'")
+	AlgorandCmd.PersistentFlags().String("kmd-port", "7833", "Port used by 'kmd'")
+	AlgorandCmd.PersistentFlags().String("kmd-token", "", "Authorization token for 'kmd'")
+	// viper.BindPFlag("log-level", AlgorandCmd.PersistentFlags().Lookup("log-level"))
 	viper.BindPFlag("host", AlgorandCmd.PersistentFlags().Lookup("host"))
 	viper.BindPFlag("algod-port", AlgorandCmd.PersistentFlags().Lookup("algod-port"))
 	viper.BindPFlag("algod-token", AlgorandCmd.PersistentFlags().Lookup("algod-token"))
@@ -167,5 +168,31 @@ func init() {
 	AlgorandCmd.AddCommand(healthCmd)
 
 	// Behavior options
+	AlgorandCmd.SetUsageTemplate(usageTemplate)
 	AlgorandCmd.DisableSuggestions = true
 }
+
+var usageTemplate = `Usage:{{if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} <command>{{end}}{{if gt (len .Aliases) 0}}
+
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use '{{.CommandPath}} <command> --help' for more information about a command.{{end}}
+`

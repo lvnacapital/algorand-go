@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"syscall"
 
 	"github.com/lvnacapital/algorand/util"
 
@@ -20,8 +19,8 @@ import (
 
 var (
 	signCmd = &cobra.Command{
-		Use:   "sign",
-		Short: "Signing and submitting a transaction",
+		Use:   "send",
+		Short: "Sign and submit a transaction",
 		Long:  ``,
 		RunE:  sign,
 	}
@@ -41,70 +40,6 @@ func includeSignFlags(ccmd *cobra.Command) {
 	ccmd.Flags().Uint64VarP(&amount, "amount", "a", 0, "The filename to save the raw data to (required)")
 	ccmd.Flags().Uint64Var(&firstRound, "firstvalid", 0, "The first round where the transaction may be committed to the ledger (currently ignored)")
 	ccmd.Flags().Uint64Var(&lastRound, "lastvalid", 0, "The last round where the transaction may be committed to the ledger (currently ignored)")
-}
-
-func getWallet() (string, error) {
-	// Get the list of wallets
-	walletsList, err := kmdClient.ListWallets()
-	if err != nil {
-		return "", fmt.Errorf("Error listing wallets - %s", err)
-	} else if len(walletsList.Wallets) <= 0 {
-		return "", fmt.Errorf("No wallets available")
-	}
-
-	var walletID string
-	fmt.Printf("\nHave %d wallet(s):\n", len(walletsList.Wallets))
-	for i, wallet := range walletsList.Wallets {
-		if walletName != "" { // Find our wallet name in the list
-			if wallet.Name == walletName {
-				fmt.Printf("Found wallet '%s' with ID: %s\n", wallet.Name, wallet.ID)
-				walletID = wallet.ID
-				break
-			}
-		} else { // List wallets for selection
-			fmt.Printf("[%d] Name: %s\tID: %s\n", i+1, wallet.Name, wallet.ID)
-		}
-	}
-	if walletID == "" {
-		term := terminal.NewTerminal(os.Stdin, "")
-		for {
-			if len(walletsList.Wallets) == 1 {
-				fmt.Printf("Select wallet [%s]: ", "1")
-			} else {
-				fmt.Printf("Select wallet [%s%d]: ", "1-", len(walletsList.Wallets))
-			}
-			walletNum, err := term.ReadLine()
-			if err != nil {
-				return "", fmt.Errorf("Error getting wallet number: %s", err)
-			}
-			i, err := strconv.Atoi(string(walletNum))
-			if err != nil || i > len(walletsList.Wallets) || i <= 0 {
-				fmt.Print("Invalid wallet number. Please try again.\n")
-				continue
-			}
-			walletID = walletsList.Wallets[i-1].ID
-			walletName = walletsList.Wallets[i-1].Name
-			break
-		}
-	}
-	// fmt.Printf("Picked wallet %s.\n", walletID)
-
-	fmt.Printf("Please type in the password for '%s': ", walletName)
-	pw, err := terminal.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		return "", fmt.Errorf("\nError getting password: %s", err)
-	}
-	walletPassword = string(pw)
-	fmt.Print("\n")
-
-	// Get a wallet handle
-	initRes, err := kmdClient.InitWalletHandle(walletID, walletPassword)
-	if err != nil {
-		return "", fmt.Errorf("\nError initializing wallet handle: %s", err)
-	}
-	walletHandle := initRes.WalletHandleToken
-
-	return walletHandle, nil
 }
 
 // Generate a new address from the wallet handle

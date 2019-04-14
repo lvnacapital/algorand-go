@@ -5,10 +5,8 @@ import (
 	"os"
 
 	"github.com/algorand/go-algorand-sdk/client/kmd"
-	"github.com/algorand/go-algorand-sdk/mnemonic"
 	"github.com/algorand/go-algorand-sdk/types"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
@@ -30,31 +28,6 @@ func includeRestoreFlags(ccmd *cobra.Command) {
 	ccmd.Flags().StringVarP(&walletMnemonic, "mnemonic", "m", "", "Private key mnemonic")
 }
 
-func getPrivateKey() (keyBytes []byte, err error) {
-	if walletMnemonic == "" {
-		term := terminal.NewTerminal(os.Stdin, "")
-		for {
-			fmt.Print("\nEnter the wallet mnemonic: ")
-			m, err := term.ReadLine()
-			if err != nil {
-				return nil, fmt.Errorf("Error getting mnemonic - %v", err)
-			}
-			walletMnemonic = string(m)
-			if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
-				fmt.Printf("Failed to get key. Try again - %v", err)
-				continue
-			}
-			break
-		}
-	} else {
-		if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
-			return nil, fmt.Errorf("Failed to get key from -m: %v", err)
-		}
-	}
-
-	return
-}
-
 // To restore a wallet, convert the phrase to a key and pass it to CreateWallet. This call will fail if the wallet already exists:
 func restore(ccmd *cobra.Command, args []string) error {
 	keyBytes, err := getPrivateKey()
@@ -66,7 +39,7 @@ func restore(ccmd *cobra.Command, args []string) error {
 	copy(mdk[:], keyBytes)
 	cwResponse, err := kmdClient.CreateWallet(walletName, walletPassword, kmd.DefaultWalletDriver, mdk)
 	if err != nil {
-		return fmt.Errorf("Error creating wallet: %s", err)
+		return fmt.Errorf("Error creating wallet - %s", err)
 	}
 
 	fmt.Printf("Created wallet '%s' with ID: %s\n", cwResponse.Wallet.Name, cwResponse.Wallet.ID)

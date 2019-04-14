@@ -2,24 +2,20 @@ package cmd_test
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/lvnacapital/algorand/cmd"
 )
 
-func TestRestore(t *testing.T) {
+func TestBackup(t *testing.T) {
 	if os.Getenv("TRAVIS") == "true" {
 		// No Algorand node connected
 		return
 	}
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	got, err := executeCommand(cmd.AlgorandCmd, "restore", "-w", fmt.Sprintf("%s-%d", walletName, r1.Intn(1000000000)), "-p", walletPassword, "-m", mnemonic)
+	got, err := executeCommand(cmd.AlgorandCmd, "backup", "-w", walletName, "-p", walletPassword)
 	if got != "" {
-		expected := "Created wallet successfully."
+		expected := fmt.Sprintf("Private Key Mnemonic: %s", mnemonic)
 		if got != expected {
 			t.Errorf("Unexpected output - %v", got)
 		}

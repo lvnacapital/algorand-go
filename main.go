@@ -7,9 +7,16 @@ import (
 	"github.com/lvnacapital/algorand/cmd"
 )
 
-func main() {
+// Run executes the top-level command
+func Run() error {
 	if err := cmd.AlgorandCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	return nil
+}
+
+func main() {
+	Run()
 }

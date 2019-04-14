@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/lvnacapital/algorand/util"
@@ -27,7 +28,7 @@ var (
 	}
 )
 
-func status(ccmd *cobra.Command, args []string) error {
+func status(ccmd *cobra.Command, args []string) (err error) {
 	util.ClearScreen()
 	// fmt.Print("`algod' Status\n--------------\n")
 	// fmt.Printf("algod: %T, kmd: %T\n", algodClient, kmdClient)
@@ -36,6 +37,9 @@ func status(ccmd *cobra.Command, args []string) error {
 	nodeStatus, err := algodClient.Status()
 	if err != nil {
 		return fmt.Errorf("Error getting algod status: %s", err)
+	} else if os.Getenv("GOTEST") == "true" {
+		ccmd.Print("Node status retrieved successfully.")
+		return
 	}
 
 	fmt.Printf("Last committed block: %d\n", nodeStatus.LastRound)
@@ -45,6 +49,9 @@ func status(ccmd *cobra.Command, args []string) error {
 	fmt.Printf("Next consensus protocol: %s\n", nodeStatus.NextVersion)
 	fmt.Printf("Round for next consensus protocol: %d\n", nodeStatus.NextVersionRound)
 	fmt.Printf("Next consensus protocol supported: %t\n", nodeStatus.NextVersionSupported)
+	if os.Getenv("GOTEST") == "true" {
+		ccmd.Print("Node status retrieval successful.")
+	}
 
-	return nil
+	return
 }
