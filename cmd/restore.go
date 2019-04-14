@@ -23,9 +23,9 @@ func init() {
 }
 
 func includeRestoreFlags(ccmd *cobra.Command) {
-	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "", "Wallet name")
-	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "", "Wallet password")
-	ccmd.Flags().StringVarP(&walletMnemonic, "mnemonic", "m", "", "Private key mnemonic")
+	ccmd.Flags().StringVarP(&WalletName, "wallet", "w", "", "Wallet name")
+	ccmd.Flags().StringVarP(&WalletPassword, "password", "p", "", "Wallet password")
+	ccmd.Flags().StringVarP(&WalletMnemonic, "mnemonic", "m", "", "Private key mnemonic")
 }
 
 // To restore a wallet, convert the phrase to a key and pass it to CreateWallet. This call will fail if the wallet already exists:
@@ -37,7 +37,7 @@ func restore(ccmd *cobra.Command, args []string) error {
 
 	var mdk types.MasterDerivationKey
 	copy(mdk[:], keyBytes)
-	cwResponse, err := kmdClient.CreateWallet(walletName, walletPassword, kmd.DefaultWalletDriver, mdk)
+	cwResponse, err := kmdClient.CreateWallet(WalletName, WalletPassword, kmd.DefaultWalletDriver, mdk)
 	if err != nil {
 		return fmt.Errorf("Error creating wallet - %s", err)
 	}

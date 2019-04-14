@@ -11,7 +11,7 @@ import (
 )
 
 // GetWallet finds and returns the wallet handle
-func getWallet() (string, error) {
+func GetWallet() (string, error) {
 	// Get the list of wallets
 	walletsList, err := kmdClient.ListWallets()
 	if err != nil {
@@ -23,8 +23,8 @@ func getWallet() (string, error) {
 	var walletID string
 	fmt.Printf("\nHave %d wallet(s):\n", len(walletsList.Wallets))
 	for i, wallet := range walletsList.Wallets {
-		if walletName != "" { // Find our wallet name in the list
-			if wallet.Name == walletName {
+		if WalletName != "" { // Find our wallet name in the list
+			if wallet.Name == WalletName {
 				fmt.Printf("Found wallet '%s' with ID: %s\n", wallet.Name, wallet.ID)
 				walletID = wallet.ID
 				break
@@ -51,24 +51,24 @@ func getWallet() (string, error) {
 				continue
 			}
 			walletID = walletsList.Wallets[i-1].ID
-			walletName = walletsList.Wallets[i-1].Name
+			WalletName = walletsList.Wallets[i-1].Name
 			break
 		}
 	}
 	// fmt.Printf("Picked wallet %s.\n", walletID)
 
-	if walletPassword == "" {
-		fmt.Printf("Please type in the password for '%s': ", walletName)
+	if WalletPassword == "" {
+		fmt.Printf("Please type in the password for '%s': ", WalletName)
 		pw, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", fmt.Errorf("\nError getting password: %s", err)
 		}
-		walletPassword = string(pw)
+		WalletPassword = string(pw)
 		fmt.Print("\n")
 	}
 
 	// Get a wallet handle
-	initRes, err := kmdClient.InitWalletHandle(walletID, walletPassword)
+	initRes, err := kmdClient.InitWalletHandle(walletID, WalletPassword)
 	if err != nil {
 		return "", fmt.Errorf("\nError initializing wallet handle: %s", err)
 	}
@@ -78,7 +78,7 @@ func getWallet() (string, error) {
 }
 
 func getPrivateKey() (keyBytes []byte, err error) {
-	if walletMnemonic == "" {
+	if WalletMnemonic == "" {
 		term := terminal.NewTerminal(os.Stdin, "")
 		for {
 			fmt.Print("\nEnter the wallet mnemonic: ")
@@ -86,15 +86,15 @@ func getPrivateKey() (keyBytes []byte, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("Error getting mnemonic - %v", err)
 			}
-			walletMnemonic = string(m)
-			if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
+			WalletMnemonic = string(m)
+			if keyBytes, err = mnemonic.ToKey(WalletMnemonic); err != nil {
 				fmt.Printf("Failed to get key. Try again - %v", err)
 				continue
 			}
 			break
 		}
 	} else {
-		if keyBytes, err = mnemonic.ToKey(walletMnemonic); err != nil {
+		if keyBytes, err = mnemonic.ToKey(WalletMnemonic); err != nil {
 			return nil, fmt.Errorf("Failed to get key from -m: %v", err)
 		}
 	}

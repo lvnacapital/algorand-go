@@ -22,8 +22,8 @@ func init() {
 }
 
 func includeBackupFlags(ccmd *cobra.Command) {
-	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "", "Wallet name")
-	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "", "Wallet password")
+	ccmd.Flags().StringVarP(&WalletName, "wallet", "w", "", "Wallet name")
+	ccmd.Flags().StringVarP(&WalletPassword, "password", "p", "", "Wallet password")
 }
 
 // Export a master derivation key from the wallet and convert it to a
@@ -32,13 +32,13 @@ func includeBackupFlags(ccmd *cobra.Command) {
 // keys. When importing an external key into a kmd-managed wallet,
 // it is needed to back up that key by itself in order to recover it.
 func backup(ccmd *cobra.Command, args []string) (err error) {
-	walletHandle, err := getWallet()
+	walletHandle, err := GetWallet()
 	if err != nil {
 		return
 	}
 
 	// Get the backup phrase
-	exportResponse, err := kmdClient.ExportMasterDerivationKey(walletHandle, walletPassword)
+	exportResponse, err := kmdClient.ExportMasterDerivationKey(walletHandle, WalletPassword)
 	if err != nil {
 		return fmt.Errorf("Error exporting backup phrase - %s", err)
 	}

@@ -24,19 +24,22 @@ var (
 	kmdClient   kmd.Client
 
 	// Subcommand variables
-	walletName     string
-	walletPassword string
-	walletMnemonic string
-	blockNumber    uint64
-	fromAddr       string
-	toAddr         string
-	noteText       string
-	fee            uint64
-	amount         uint64
-	firstRound     uint64
-	lastRound      uint64
-	addr           string
-	txID           string
+	blockNumber uint64
+	fromAddr    string
+	toAddr      string
+	noteText    string
+	fee         uint64
+	amount      uint64
+	firstRound  uint64
+	lastRound   uint64
+	addr        string
+	txID        string
+	// WalletName ...
+	WalletName string
+	// WalletPassword ...
+	WalletPassword string
+	// WalletMnemonic ...
+	WalletMnemonic string
 
 	// Linker variables
 	version string

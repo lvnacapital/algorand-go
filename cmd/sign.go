@@ -31,8 +31,8 @@ func init() {
 }
 
 func includeSignFlags(ccmd *cobra.Command) {
-	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "", "Set the wallet to be used for the selected operation")
-	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "", "The wallet's password")
+	ccmd.Flags().StringVarP(&WalletName, "wallet", "w", "", "Set the wallet to be used for the selected operation")
+	ccmd.Flags().StringVarP(&WalletPassword, "password", "p", "", "The wallet's password")
 	ccmd.Flags().StringVarP(&fromAddr, "from", "f", "", "Account address to send the money from (required)")
 	ccmd.Flags().StringVarP(&toAddr, "to", "t", "", "Address to send to money to (required)")
 	ccmd.Flags().StringVarP(&noteText, "note", "n", "", "Note text")
@@ -69,7 +69,7 @@ func getFromAddr(walletHandle string) error {
 		return fmt.Errorf("No addresses available")
 	}
 
-	fmt.Printf("\nHave %d address(es) in '%s':\n", len(keysList.Addresses), walletName)
+	fmt.Printf("\nHave %d address(es) in '%s':\n", len(keysList.Addresses), WalletName)
 	for i, address := range keysList.Addresses {
 		if fromAddr != "" { // Find address in the list
 			if address == fromAddr {
@@ -194,7 +194,7 @@ func makeTransaction() (tx *types.Transaction, err error) {
 }
 
 func signTransaction(walletHandle string, tx *types.Transaction) ([]byte, error) {
-	keyRes, err := kmdClient.ExportKey(walletHandle, walletPassword, fromAddr)
+	keyRes, err := kmdClient.ExportKey(walletHandle, WalletPassword, fromAddr)
 	if err != nil {
 		return nil, fmt.Errorf("Error extracting secret key: %s", err)
 	}
@@ -208,7 +208,7 @@ func signTransaction(walletHandle string, tx *types.Transaction) ([]byte, error)
 	fmt.Printf("\nMade signed transaction using library: %x\n", stx)
 
 	// Sign the transaction (using `kmd')
-	kmdStx, err := kmdClient.SignTransaction(walletHandle, walletPassword, *tx)
+	kmdStx, err := kmdClient.SignTransaction(walletHandle, WalletPassword, *tx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to sign transaction with `kmd' - %s", err)
 	}
@@ -236,7 +236,7 @@ func sendTransaction(stx []byte) error {
 
 // Signing and Submitting a Transaction
 func sign(ccmd *cobra.Command, args []string) (err error) {
-	walletHandle, err := getWallet()
+	walletHandle, err := GetWallet()
 	if err != nil {
 		return
 	}

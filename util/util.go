@@ -17,14 +17,12 @@ import (
 	"github.com/algorand/go-algorand-sdk/types"
 )
 
-const investorCodeLen = 16
-const investorCodeLenDecoded = 10
-const registrationBaseURL = "https://investorkey.algodev.network/register"
+const codeLength = 16
+const codeLenghtDecoded = 10
 const algorandAddressLength = 58
 
-var numKeys int
-var genInvestorCode bool
-var createWallet bool
+// ForceRand for deterministic test
+var ForceRand []byte
 
 // Node configuration
 type Node struct {
@@ -99,55 +97,58 @@ func base32Decode(b string) ([]byte, error) {
 	return base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(b)
 }
 
-func checkInvestorCode(investorCode string) error {
-	if len(investorCode) != investorCodeLen {
-		return fmt.Errorf("investor code should be %d characters long", investorCodeLen)
+// CheckCode verifies that the input code and checksum match
+func CheckCode(code string) error {
+	if len(code) != codeLength {
+		return fmt.Errorf("Code should be %d characters long", codeLength)
 	}
 
-	// Decode investor code
-	codeBytes, err := base32Decode(investorCode)
+	// Decode code
+	codeBytes, err := base32Decode(code)
 	if err != nil {
-		return fmt.Errorf("couldn't parse investor code")
-	}
-
-	if len(codeBytes) != investorCodeLenDecoded {
-		return fmt.Errorf("invalid investor coded decoded length")
+		return fmt.Errorf("Could not parse code")
+	} else if len(codeBytes) != codeLenghtDecoded {
+		return fmt.Errorf("Invalid code decoded length")
 	}
 
 	// Pull out 2-byte checksum
-	cksum := codeBytes[investorCodeLenDecoded-2:]
+	cksum := codeBytes[codeLenghtDecoded-2:]
 
 	// Compute expected checksum
-	hash := sha512.Sum512_256(codeBytes[:investorCodeLenDecoded-2])
+	hash := sha512.Sum512_256(codeBytes[:codeLenghtDecoded-2])
 
 	// Check checksum
 	if !bytes.Equal(cksum, hash[:2]) {
-		return fmt.Errorf("invalid checksum")
+		return fmt.Errorf("Invalid checksum")
 	}
 
-	// Valid investor code
+	// Valid code
 	return nil
 }
 
-func generateInvestorCode() (res string) {
+// GenerateCode generates a code
+func GenerateCode() (res string) {
 	// Generate raw code bytes
-	var raw [investorCodeLenDecoded - 2]byte
-	_, err := rand.Read(raw[:])
-	if err != nil {
-		panic(fmt.Sprintf("broken system randomness: %s", err))
+	raw := make([]byte, codeLenghtDecoded-2)
+	if ForceRand != nil {
+		raw = ForceRand
+	} else {
+		if _, err := rand.Read(raw); err != nil {
+			panic(fmt.Sprintf("Broken system randomness: %s", err))
+		}
 	}
 
 	// Compute checksum
-	hash := sha512.Sum512_256(raw[:])
+	hash := sha512.Sum512_256(raw)
 	cksum := hash[:2]
 
 	// Append checksum
-	rawWithCksum := append(raw[:], cksum...)
+	rawWithCksum := append(raw, cksum...)
 	res = base32Encode(rawWithCksum)
 
 	// Check that the generated code is valid
-	if len(res) != investorCodeLen {
-		panic(fmt.Sprintf("generated bad investor code: %s", res))
+	if len(res) != codeLength {
+		panic(fmt.Sprintf("Generated bad code: %s", res))
 	}
 
 	return

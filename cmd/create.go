@@ -6,7 +6,6 @@ import (
 	"github.com/algorand/go-algorand-sdk/client/kmd"
 	"github.com/algorand/go-algorand-sdk/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -25,23 +24,13 @@ func init() {
 }
 
 func includeCreateFlags(ccmd *cobra.Command) {
-	ccmd.Flags().StringVarP(&walletName, "wallet", "w", "testwallet", "Set the wallet to be used for the selected operation")
-	ccmd.Flags().StringVarP(&walletPassword, "password", "p", "testpassword", "The wallet's password")
+	ccmd.Flags().StringVarP(&WalletName, "wallet", "w", "testwallet", "Set the wallet to be used for the selected operation")
+	ccmd.Flags().StringVarP(&WalletPassword, "password", "p", "testpassword", "The wallet's password")
 }
 
 func create(ccmd *cobra.Command, args []string) error {
-	kmdAddress := fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port"))
-	kmdToken := viper.GetString("kmd-token")
-
-	// Create a kmd client
-	kmdClient, err := kmd.MakeClient(kmdAddress, kmdToken)
-	if err != nil {
-		return fmt.Errorf("Failed to make kmd client: %s", err)
-	}
-	fmt.Println("Made a kmd client")
-
 	// Create the example wallet, if it doesn't already exist
-	cwResponse, err := kmdClient.CreateWallet(walletName, walletPassword, kmd.DefaultWalletDriver, types.MasterDerivationKey{})
+	cwResponse, err := kmdClient.CreateWallet(WalletName, WalletPassword, kmd.DefaultWalletDriver, types.MasterDerivationKey{})
 	if err != nil {
 		return fmt.Errorf("Error creating wallet: %s", err)
 	}
@@ -52,7 +41,7 @@ func create(ccmd *cobra.Command, args []string) error {
 
 	// Get a wallet handle. The wallet handle is used for things like signing transactions
 	// and creating accounts. Wallet handles do expire, but they can be renewed
-	initResponse, err := kmdClient.InitWalletHandle(walletID, walletPassword)
+	initResponse, err := kmdClient.InitWalletHandle(walletID, WalletPassword)
 	if err != nil {
 		return fmt.Errorf("Error initializing wallet handle: %s", err)
 	}

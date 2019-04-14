@@ -9,6 +9,7 @@ import (
 )
 
 func TestIsValidGolden(t *testing.T) {
+	t.Parallel()
 	golden := "7777777777777777777777777777777777777777777777777774MSJUVU"
 
 	if util.IsValidAddress(golden) != true {
@@ -17,6 +18,7 @@ func TestIsValidGolden(t *testing.T) {
 }
 
 func TestMakeClients(t *testing.T) {
+	t.Parallel()
 	nodeConfig := util.Node{
 		AlgodAddress: fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("algod-port")),
 		KmdAddress:   fmt.Sprintf("http://%s:%s", viper.GetString("host"), viper.GetString("kmd-port")),
@@ -26,5 +28,26 @@ func TestMakeClients(t *testing.T) {
 
 	if _, _, err := util.MakeClients(&nodeConfig); err != nil {
 		t.Errorf("Failed to make clients.")
+	}
+}
+
+func TestCodeValid(t *testing.T) {
+	t.Parallel()
+	codes := []string{"G2AWNZ377XCR44DV", "NBDKVIJVCQSMYICF"}
+
+	for _, code := range codes {
+		if err := util.CheckCode(code); err != nil {
+			t.Errorf("Code check failed - %v", err)
+		}
+	}
+}
+
+func TestCodeGen(t *testing.T) {
+	t.Parallel()
+	util.ForceRand = []byte{104, 70, 170, 161, 53, 20, 36, 204}
+	expected := "NBDKVIJVCQSMYICF"
+	res := util.GenerateCode()
+	if res != expected {
+		t.Errorf("Code generation failed: %s", res)
 	}
 }

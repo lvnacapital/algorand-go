@@ -11,13 +11,22 @@ import (
 )
 
 func TestRestore(t *testing.T) {
-	if os.Getenv("TRAVIS") == "true" {
-		// No Algorand node connected
+	t.Parallel()
+	if os.Getenv("CI") == "true" && !kmdAvailable {
+		// No Algorand node available
 		return
 	}
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	got, err := executeCommand(cmd.AlgorandCmd, "restore", "-w", fmt.Sprintf("%s-%d", walletName, r1.Intn(1000000000)), "-p", walletPassword, "-m", mnemonic)
+	cmd.WalletName = walletName
+	for {
+		if _, err := cmd.GetWallet(); err != nil {
+			walletName = fmt.Sprintf("%s-%d", walletName, r1.Intn(1000000000))
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+	got, err := executeCommand(cmd.AlgorandCmd, "restore", "-w", walletName, "-p", walletPassword, "-m", mnemonic)
 	if got != "" {
 		expected := "Created wallet successfully."
 		if got != expected {

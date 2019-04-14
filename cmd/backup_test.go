@@ -9,8 +9,9 @@ import (
 )
 
 func TestBackup(t *testing.T) {
-	if os.Getenv("TRAVIS") == "true" {
-		// No Algorand node connected
+	t.Parallel()
+	if os.Getenv("CI") == "true" && !kmdAvailable {
+		// No Algorand node available
 		return
 	}
 	got, err := executeCommand(cmd.AlgorandCmd, "backup", "-w", walletName, "-p", walletPassword)
