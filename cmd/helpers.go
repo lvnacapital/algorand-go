@@ -10,6 +10,37 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+func getBlock() error {
+	term := terminal.NewTerminal(os.Stdin, "")
+	for {
+		if blockNumber == 0 {
+			fmt.Print("\nEnter the block number: ")
+			b, err := term.ReadLine()
+			if err != nil {
+				return fmt.Errorf("Error getting block number - %v", err)
+			}
+			if blockNumber, err = strconv.ParseUint(string(b), 10, 64); err != nil {
+				fmt.Printf("Block number '%s' not formatted correctly. Try again - %v", string(b), err)
+				blockNumber = 0
+				continue
+			}
+		}
+		nodeStatus, err := algodClient.Status()
+		if err != nil {
+			return fmt.Errorf("Error getting algod status - %v", err)
+		}
+		if nodeStatus.LastRound < blockNumber {
+			fmt.Printf("Block number cannot be greater than last round. Try again - %d > %d", blockNumber, nodeStatus.LastRound)
+			blockNumber = 0
+			continue
+		}
+
+		break
+	}
+
+	return nil
+}
+
 // CheckWallet checks wallet parameters.
 func CheckWallet() error {
 	// Get the list of wallets

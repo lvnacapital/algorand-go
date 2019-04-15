@@ -10,10 +10,15 @@ import (
 
 func TestIsValidGolden(t *testing.T) {
 	t.Parallel()
-	golden := "7777777777777777777777777777777777777777777777777774MSJUVU"
+	golden := []string{
+		"7777777777777777777777777777777777777777777777777774MSJUVU",
+		"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+	}
 
-	if util.IsValidAddress(golden) != true {
-		t.Errorf("Expected address %s to be invalid.", golden)
+	for _, addr := range golden {
+		if util.IsValidAddress(addr) != true {
+			t.Errorf("Expected address %s to be invalid.", golden)
+		}
 	}
 }
 

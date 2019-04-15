@@ -150,6 +150,7 @@ fmt: deps
 	fi
 
 vet: deps
+	@echo 'Running source analysis...'
 	$(VET) $(PACKAGES)
 
 sha256all: $(BINARIES) $(SHA256S)
