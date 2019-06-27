@@ -209,13 +209,13 @@ mainLoop:
 		if err != nil {
 			return fmt.Errorf("Retrieving block %d - %s", i, err)
 		}
-		// fmt.Printf("Number of transactions in block %d: %d", i, len(block.Txns.Transactions))
-		if !(len(block.Txns.Transactions) > 0) {
+		// fmt.Printf("Number of transactions in block %d: %d", i, len(block.Transactions.Transactions))
+		if !(len(block.Transactions.Transactions) > 0) {
 			// fmt.Printf("No transactions in block: %d\n", i)
 			continue
 		}
 
-		for _, transaction := range block.Txns.Transactions {
+		for _, transaction := range block.Transactions.Transactions {
 			if transaction.TxID == txID {
 				fmt.Printf("Found transaction in block: %d\n", i)
 				transactionJSON, err := json.MarshalIndent(transaction, "", "  ")

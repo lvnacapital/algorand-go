@@ -67,7 +67,6 @@ SHA256S := $(addsuffix .sha256,$(BINARIES))
 VERIFY := $(patsubst $(DESTDIR)/$(WINDOWS)/%,$(DESTDIR)/$(WINDOWS)/%.exe,$(addsuffix /$(BINARY),$(PLATFORMS)))
 PACKAGES = $(shell $(LIST) ./... | $(GREP) -v '/vendor/')
 EXCLUDED := -e 'config.yml' -e 'vendor/' -e '.vscode/'
-LOCK := Gopkg.lock
 
 # OS- and architecture-specific
 ifeq ($(OS),Windows_NT)
@@ -102,10 +101,8 @@ clean:
 	$(CLEAN)
 	$(GIT) clean -x -d -f $(EXCLUDED)
 
-deps: $(LOCK)
-$(LOCK):
+deps:
 	@echo 'Getting dependencies...'
-	$(DEP) ensure
 
 lint: deps
 	@echo 'Linting...'

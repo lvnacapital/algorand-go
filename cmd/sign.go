@@ -174,16 +174,17 @@ func makeTransaction() (tx *types.Transaction, err error) {
 		firstRound = txParams.LastRound
 	}
 	if lastRound == 0 {
-		lastRound = txParams.LastRound + 2
+		lastRound = txParams.LastRound + 1000
 	}
 	if firstRound > lastRound {
 		firstRound = txParams.LastRound
-		lastRound = txParams.LastRound + 2
+		lastRound = txParams.LastRound + 1000
 	}
 	note := msgpack.Encode(noteText)
 	closeRemainderTo := ""
 	genID := txParams.GenesisID
-	txP, err := transaction.MakePaymentTxn(fromAddr, toAddr, fee, amount, firstRound, lastRound, note, closeRemainderTo, genID)
+	genHash := txParams.GenesisHash
+	txP, err := transaction.MakePaymentTxn(fromAddr, toAddr, fee, amount, firstRound, lastRound, note, closeRemainderTo, genID, genHash)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating transaction: %s", err)
 	}

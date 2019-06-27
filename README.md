@@ -14,7 +14,6 @@ Prerequisites:
 * Install `go` from: [https://golang.org/dl/](https://golang.org/dl/)
 * Install `gox` using: `go get -u github.com/mitchellh/gox`
 * Install `golint` using: `go get -u golang.org/x/lint/golint`
-* Install `dep` using: `curl https://raw.githubusercontent.com/golang/dep/masterinstall.sh | sh`
 * Install `make` (on Windows) from: [http://gnuwin32.sourceforge.net/packages/make.htm](http://gnuwin32.sourceforge.net/packages/make.htm)
 
 To build for all platforms on Linux use:
@@ -24,13 +23,15 @@ $ make -r buildall
 ```
 
 To build for the current platform only:
+
 ```
 $ make -r build
 ```
 
 To build for all platforms on Windows use:
+
 ```
-$ /c/Program\ Files\ \(x86\)/GnuWin32/bin/make.exe -r build
+$ /c/Users/<user>/AppData/Roaming/GnuWin32/bin/make.exe -r buildall
 ```
 
 Refer to the [Makefile](Makefile) for other options.
@@ -48,12 +49,12 @@ kmd-token: 'be84aa55f61665645ed68'    # the `kmd' process token
 ```
 
 These values are taken from:
-* `$NODE/data/algod.net`
-* `$NODE/data/algod.token`
-* `$NODE/data/kmd-<VERSION>/kmd.net`
-* `$NODE/data/kmd-<VERSION>/kmd.token`
+* `$ALGORAND_DATA/algod.net`
+* `$ALGORAND_DATA/algod.token`
+* `$ALGORAND_DATA/kmd-<VERSION>/kmd.net`
+* `$ALGORAND_DATA/kmd-<VERSION>/kmd.token`
 
-Many commands assume that the node is set up as archival in `$NODE/data/config.json`:
+Many commands assume that the node is set up as archival in `$ALGORAND_DATA/config.json`:
 
 ```json
 {
@@ -66,11 +67,11 @@ Many commands assume that the node is set up as archival in `$NODE/data/config.j
 Ensure the `algod` and `kmd` processes are started and that the node is synchronized to the network as described [here](https://developer.algorand.org/docs/introduction-installing-node).
 
 ```
-$ $NODE/goal node start
+$ goal node start
 Algorand node successfully started!
-$ $NODE/goal kmd start
+$ goal kmd start
 Successfully started kmd
-$ $NODE/goal node status
+$ goal node status
 ```
 
 To use simply run `algorand [command] [flags]`. Running `algorand` or `algorand -h` will show usage and a list of commands.

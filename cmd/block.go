@@ -39,14 +39,15 @@ func block(ccmd *cobra.Command, args []string) error {
 	}
 
 	// Print the block information
-	fmt.Printf("\n-----------------Block Information-------------------\n")
 	blockJSON, err := json.MarshalIndent(blockRes, "", "    ")
 	if err != nil {
-		return fmt.Errorf("Cannot marshall block data - %s", err)
+		return fmt.Errorf("Cannot marshal block data - %s", err)
 	}
-	fmt.Printf("%s\n", blockJSON)
 	if os.Getenv("GOTEST") == "true" {
 		ccmd.Print("Block retrieved successfully.")
+	} else {
+		fmt.Printf("\n-----------------Block Information-------------------\n")
+		fmt.Printf("%s\n", blockJSON)
 	}
 
 	return nil
