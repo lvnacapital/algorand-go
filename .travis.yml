@@ -30,8 +30,6 @@ before_install:
   - go get -u golang.org/x/lint/golint
   - go get -u github.com/sqs/goreturns
   - pip install awscli --upgrade --user
-install:
-  - dep ensure
 script:
   - make -r all
 deploy:
