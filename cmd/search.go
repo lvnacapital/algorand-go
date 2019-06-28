@@ -7,7 +7,7 @@ import (
 
 	"github.com/algorand/go-algorand-sdk/client/algod/models"
 	"github.com/algorand/go-algorand-sdk/encoding/msgpack"
-	"github.com/lvnacapital/algorand/util"
+	"github.com/lvnacapital/algorand-go/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )

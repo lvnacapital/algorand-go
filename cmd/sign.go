@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/lvnacapital/algorand/util"
+	"github.com/lvnacapital/algorand-go/util"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"

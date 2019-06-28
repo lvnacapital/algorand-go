@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lvnacapital/algorand/cmd"
+	"github.com/lvnacapital/algorand-go/cmd"
 )
 
 // Run executes the top-level command

@@ -1,4 +1,4 @@
-module github.com/lvnacapital/algorand
+module github.com/lvnacapital/algorand-go
 
 go 1.12
 

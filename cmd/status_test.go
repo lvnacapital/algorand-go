@@ -3,7 +3,7 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/lvnacapital/algorand/cmd"
+	"github.com/lvnacapital/algorand-go/cmd"
 )
 
 func TestStatus(t *testing.T) {

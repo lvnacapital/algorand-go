@@ -94,7 +94,7 @@ endif
 
 .PHONY: all clean deps fmt vet lint quicktest test build buildall run verify upload sha256all verifyall $(VERIFY) login secure
 
-all: fmt vet lint test run buildall sha256all verifyall
+all: fmt vet lint run buildall sha256all verifyall
 
 clean:
 	@echo 'Cleaning...'

@@ -3,7 +3,7 @@ package main_test
 import (
 	"testing"
 
-	main "github.com/lvnacapital/algorand"
+	main "github.com/lvnacapital/algorand-go"
 )
 
 func TestMain(t *testing.T) {
