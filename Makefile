@@ -3,7 +3,7 @@ SHELL = /bin/sh
 # Configuration
 USER := lvnacapital
 BINARY := algorand
-PACKAGE := github.com/$(USER)/$(BINARY)
+PACKAGE := github.com/$(USER)/$(BINARY)-go
 BUCKET := s3://$(USER)/$(BINARY)
 ALLACCESS := read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 REGION := us-west-2
