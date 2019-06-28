@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lvnacapital/algorand/util"
+	"github.com/lvnacapital/algorand-go/util"
 	"github.com/spf13/viper"
 )
 
