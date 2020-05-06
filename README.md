@@ -9,29 +9,31 @@ It also leverages [Cobra](https://github.com/spf13/cobra) for the CLI interface 
 ## Build
 
 Prerequisites:
-* Install Algorand node using: [https://developer.algorand.org/docs/introduction-installing-node](https://developer.algorand.org/docs/introduction-installing-node)
-* Install `git` from: [https://git-scm.com/downloads](https://git-scm.com/downloads)
-* Install `go` from: [https://golang.org/dl/](https://golang.org/dl/)
-* Install `gox` using: `go get -u github.com/mitchellh/gox`
-* Install `golint` using: `go get -u golang.org/x/lint/golint`
-* Install `make` (on Windows) from: [http://gnuwin32.sourceforge.net/packages/make.htm](http://gnuwin32.sourceforge.net/packages/make.htm)
+
+- Install Algorand node using: [https://developer.algorand.org/docs/introduction-installing-node](https://developer.algorand.org/docs/introduction-installing-node)
+- Install `git` from: [https://git-scm.com/downloads](https://git-scm.com/downloads)
+- Install `go` from: [https://golang.org/dl/](https://golang.org/dl/)
+- Install `goreturns` using: `go get -u github.com/sqs/goreturns`
+- Install `golint` using: `go get -u golang.org/x/lint/golint`
+- Install `gox` using: `go get -u github.com/mitchellh/gox`
+- Install `make` (on Windows) from: [http://gnuwin32.sourceforge.net/packages/make.htm](http://gnuwin32.sourceforge.net/packages/make.htm)
+
+Set up Go Modules (if not set up):
+
+```console
+$ go mod init github.com/lvnacapital/algorand-go
+```
 
 To build for all platforms on Linux use:
 
-```
+```console
 $ make -r buildall
 ```
 
 To build for the current platform only:
 
-```
+```console
 $ make -r build
-```
-
-To build for all platforms on Windows use:
-
-```
-$ /c/Users/<user>/AppData/Roaming/GnuWin32/bin/make.exe -r buildall
 ```
 
 Refer to the [Makefile](Makefile) for other options.
@@ -41,24 +43,25 @@ Refer to the [Makefile](Makefile) for other options.
 To configure `algorand`, a `config.yml` file can be passed with the --config flag. Configuration read in through a file will overwrite the same configuration specified by a flag. If no config file is passed, and no flags are set, reasonable defaults will be used.
 
 ```yml
-hostname: '127.0.0.1'                 # the Algorand node's IP
-algod-port: '8080'                    # the `algod' process port
-kmd-port: '7833'                      # the `kmd' process port
-algod-token: '374de74fa794248762e5a'  # the `algod' process token
-kmd-token: 'be84aa55f61665645ed68'    # the `kmd' process token
+hostname: '127.0.0.1' # the Algorand node's IP
+algod-port: '8080' # the `algod' process port
+kmd-port: '7833' # the `kmd' process port
+algod-token: '374de74fa794248762e5a' # the `algod' process token
+kmd-token: 'be84aa55f61665645ed68' # the `kmd' process token
 ```
 
 These values are taken from:
-* `$ALGORAND_DATA/algod.net`
-* `$ALGORAND_DATA/algod.token`
-* `$ALGORAND_DATA/kmd-<VERSION>/kmd.net`
-* `$ALGORAND_DATA/kmd-<VERSION>/kmd.token`
+
+- `$ALGORAND_DATA/algod.net`
+- `$ALGORAND_DATA/algod.token`
+- `$ALGORAND_DATA/kmd-<VERSION>/kmd.net`
+- `$ALGORAND_DATA/kmd-<VERSION>/kmd.token`
 
 Many commands assume that the node is set up as archival in `$ALGORAND_DATA/config.json`:
 
 ```json
 {
-    "Archival": true
+  "Archival": true
 }
 ```
 

@@ -1,19 +1,15 @@
 module github.com/lvnacapital/algorand-go
 
-go 1.13
+go 1.14
 
 require (
-	github.com/algorand/go-algorand-sdk v0.0.0-20191125141214-5911487331eb
-	github.com/algorand/go-codec v1.1.7 // indirect
-	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/spf13/afero v1.2.2 // indirect
-	github.com/spf13/cobra v0.0.5
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.5.0
-	golang.org/x/crypto v0.0.0-20191122220453-ac88ee75c92c
-	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
-	golang.org/x/text v0.3.2 // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	github.com/algorand/go-algorand-sdk v1.3.0
+	github.com/hashicorp/go-version v1.2.0 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
+	github.com/spf13/cobra v1.0.0
+	github.com/spf13/viper v1.6.3
+	github.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 // indirect
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/tools v0.0.0-20200506181757-c20a87c16a39 // indirect
 )
