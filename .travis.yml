@@ -27,7 +27,7 @@ before_install:
   - sudo apt-get install -y python3-pip python3-setuptools python3-wheel
   - python3 --version
   - pip3 --version
-  - pip3 install awscli --upgrade --user
+  - pip3 install --upgrade --user awscli
   - go get -u github.com/mitchellh/gox golang.org/x/lint/golint github.com/sqs/goreturns
 script:
   - make -r all
